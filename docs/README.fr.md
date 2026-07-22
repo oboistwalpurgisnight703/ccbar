@@ -20,7 +20,7 @@ Visualisez votre modèle, votre niveau d'effort, votre espace de travail et votr
 `ccbar` affiche une status line compacte sur deux lignes sous votre invite Claude Code :
 
 ```
-Kobble [Opus 4.8 high -> my-project]
+Acme [Opus 4.8 high -> my-project]
 ctx ████░░░░░░ 42%   5h  ██████░░░░ 63% (resets 2h 15m)   7d  ████████░░ 88% (resets 3d 4h)
 ```
 
@@ -92,6 +92,7 @@ Chaque valeur possède une valeur par défaut raisonnable, si bien qu'une config
 
 ```
 ccbar config       Lance l'assistant de configuration interactif.
+ccbar gallery      Parcourez les presets et appliquez-en un si vous le souhaitez.
 ccbar demo         Prévisualise la status line avec des données d'exemple.
 ccbar render       Lit le JSON de statut de Claude Code sur stdin et affiche la barre
                    (c'est ce que Claude Code lui-même appelle).
@@ -99,6 +100,16 @@ ccbar uninstall    Retire l'intégration de ccbar des paramètres de Claude Code
 ccbar version      Affiche la version.
 ccbar help         Affiche l'aide.
 ```
+
+### Gallery
+
+Vous ne savez pas quel style choisir ? Parcourez un ensemble de presets sélectionnés — chacun étant une combinaison de thème, de style de barre et de largeur — et appliquez-en un en une touche :
+
+```sh
+ccbar gallery
+```
+
+Elle affiche chaque preset rendu avec des données d'exemple, puis (dans un terminal) vous demande lequel appliquer. Appliquer un preset ne modifie que le thème et le style des barres — votre org/label et l'affichage de vos segments sont conservés. Lancez-la avec un pipe (par ex. `ccbar gallery | less`) pour simplement parcourir sans l'invite.
 
 > La commande `ccbar` se trouve dans `~/.local/bin`. Si ce répertoire n'est pas dans votre `PATH`, ajoutez-le :
 > ```sh

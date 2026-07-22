@@ -20,7 +20,7 @@ Consulta tu modelo, nivel de esfuerzo, espacio de trabajo y uso en tiempo real d
 `ccbar` renderiza una línea de estado compacta de dos líneas debajo de tu prompt de Claude Code:
 
 ```
-Kobble [Opus 4.8 high -> my-project]
+Acme [Opus 4.8 high -> my-project]
 ctx ████░░░░░░ 42%   5h  ██████░░░░ 63% (resets 2h 15m)   7d  ████████░░ 88% (resets 3d 4h)
 ```
 
@@ -92,6 +92,7 @@ Cada valor tiene un valor predeterminado sensato, por lo que una configuración 
 
 ```
 ccbar config       Run the interactive setup wizard.
+ccbar gallery      Explora aspectos preconfigurados y, opcionalmente, aplica uno.
 ccbar demo         Preview the status line with sample data.
 ccbar render       Read Claude Code's status JSON on stdin and print the bar
                    (this is what Claude Code itself calls).
@@ -99,6 +100,16 @@ ccbar uninstall    Remove ccbar's wiring from Claude Code settings.
 ccbar version      Print the version.
 ccbar help         Show help.
 ```
+
+### Galería
+
+¿No estás seguro de qué aspecto quieres? Explora un conjunto de preajustes seleccionados —cada uno una combinación de tema, estilo de barra y ancho— y aplica uno con una sola pulsación:
+
+```sh
+ccbar gallery
+```
+
+Imprime cada preajuste renderizado con datos de ejemplo y luego (en una terminal) pregunta cuál aplicar. Aplicar un preajuste cambia solo el tema y el estilo de barra —tu etiqueta de organización y los interruptores de segmentos se conservan—. Ejecútalo canalizado (p. ej. `ccbar gallery | less`) para solo explorar sin la pregunta.
 
 > El comando `ccbar` reside en `~/.local/bin`. Si eso no está en tu `PATH`, añádelo:
 > ```sh

@@ -20,7 +20,7 @@
 `ccbar` 会在你的 Claude Code 提示符下方渲染一个紧凑的两行状态栏：
 
 ```
-Kobble [Opus 4.8 high -> my-project]
+Acme [Opus 4.8 high -> my-project]
 ctx ████░░░░░░ 42%   5h  ██████░░░░ 63% (resets 2h 15m)   7d  ████████░░ 88% (resets 3d 4h)
 ```
 
@@ -92,6 +92,7 @@ ccbar config
 
 ```
 ccbar config       运行交互式设置向导。
+ccbar gallery      浏览预设外观，并可选择应用其中一个。
 ccbar demo         用示例数据预览状态栏。
 ccbar render       从标准输入读取 Claude Code 的状态 JSON 并打印状态栏
                    （这正是 Claude Code 本身所调用的命令）。
@@ -99,6 +100,16 @@ ccbar uninstall    从 Claude Code 设置中移除 ccbar 的接入。
 ccbar version      打印版本号。
 ccbar help         显示帮助。
 ```
+
+### 样式库
+
+还不确定想要哪种外观？浏览一组精选预设——每个预设都是主题、用量条样式和宽度的组合——只需一次按键即可应用其中一个：
+
+```sh
+ccbar gallery
+```
+
+它会用示例数据渲染并打印每个预设，然后（在终端中）询问要应用哪一个。应用预设只会更改主题和用量条样式——你的标签和分段开关将保持不变。若通过管道运行（例如 `ccbar gallery | less`），则只浏览而不显示提示。
 
 > `ccbar` 命令位于 `~/.local/bin`。如果该目录不在你的 `PATH` 中，请将其添加进去：
 > ```sh

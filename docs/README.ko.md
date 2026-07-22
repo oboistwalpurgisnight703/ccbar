@@ -20,7 +20,7 @@
 `ccbar`는 Claude Code 프롬프트 아래에 간결한 두 줄짜리 상태 표시줄을 렌더링합니다:
 
 ```
-Kobble [Opus 4.8 high -> my-project]
+Acme [Opus 4.8 high -> my-project]
 ctx ████░░░░░░ 42%   5h  ██████░░░░ 63% (resets 2h 15m)   7d  ████████░░ 88% (resets 3d 4h)
 ```
 
@@ -92,6 +92,7 @@ ccbar config
 
 ```
 ccbar config       대화형 설정 마법사를 실행합니다.
+ccbar gallery      프리셋 모양을 둘러보고 원하면 하나를 적용합니다.
 ccbar demo         샘플 데이터로 상태 표시줄을 미리 봅니다.
 ccbar render       stdin으로 Claude Code의 상태 JSON을 읽어 막대를 출력합니다
                    (Claude Code 자체가 호출하는 명령입니다).
@@ -99,6 +100,16 @@ ccbar uninstall    Claude Code 설정에서 ccbar 연결을 제거합니다.
 ccbar version      버전을 출력합니다.
 ccbar help         도움말을 표시합니다.
 ```
+
+### 갤러리
+
+어떤 모양이 좋을지 고민되나요? 엄선된 프리셋 모음을 둘러보세요 — 각 프리셋은 테마, 막대 스타일, 너비의 조합입니다 — 그리고 키 한 번으로 적용하세요:
+
+```sh
+ccbar gallery
+```
+
+샘플 데이터로 렌더링된 모든 프리셋을 출력한 다음, (터미널에서는) 어느 것을 적용할지 묻습니다. 프리셋을 적용하면 테마와 막대 스타일만 바뀌며, 조직 레이블과 세그먼트 토글은 그대로 유지됩니다. 프롬프트 없이 둘러보기만 하려면 파이프로 실행하세요(예: `ccbar gallery | less`).
 
 > `ccbar` 명령은 `~/.local/bin`에 있습니다. 이 경로가 `PATH`에 없다면 추가하세요:
 > ```sh

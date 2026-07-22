@@ -20,7 +20,7 @@
 `ccbar` මඟින් ඔබේ Claude Code prompt එක යටින් සංයුක්ත, පේළි දෙකකින් යුත් තත්ත්ව රේඛාවක් නිරූපණය කරයි:
 
 ```
-Kobble [Opus 4.8 high -> my-project]
+Acme [Opus 4.8 high -> my-project]
 ctx ████░░░░░░ 42%   5h  ██████░░░░ 63% (resets 2h 15m)   7d  ████████░░ 88% (resets 3d 4h)
 ```
 
@@ -92,6 +92,7 @@ ccbar config
 
 ```
 ccbar config       අන්තර්ක්‍රියාකාරී පිහිටුවීමේ wizard එක ධාවනය කරන්න.
+ccbar gallery      Preset පෙනුම් පිරික්සා අවශ්‍ය නම් එකක් යොදන්න.
 ccbar demo         නියැදි දත්ත සමඟ තත්ත්ව රේඛාව පෙරදසුන් කරන්න.
 ccbar render       stdin මත Claude Code හි තත්ත්ව JSON කියවා තීරුව මුද්‍රණය කරන්න
                    (මෙය Claude Code විසින්ම කැඳවන දෙයයි).
@@ -99,6 +100,16 @@ ccbar uninstall    Claude Code settings වෙතින් ccbar හි සම�
 ccbar version      අනුවාදය මුද්‍රණය කරන්න.
 ccbar help         උදව් පෙන්වන්න.
 ```
+
+### Gallery
+
+කුමන පෙනුම ඔබට අවශ්‍යද යන්න විශ්වාස නැද්ද? තෝරාගත් preset කට්ටලයක් පිරික්සන්න — එක් එක් preset එකක් තේමාව, තීරු විලාසය සහ පළල යන ඒවායේ සංයෝජනයකි — සහ එකක් යතුරු එබීමකින් යොදන්න:
+
+```sh
+ccbar gallery
+```
+
+එය සෑම preset එකක්ම නියැදි දත්ත සමඟ render කර මුද්‍රණය කරයි, ඉන්පසු (terminal එකක) කුමක් යෙදිය යුතුදැයි විමසයි. preset එකක් යෙදීමෙන් වෙනස් වන්නේ තේමාව සහ තීරු විලාසය පමණි — ඔබේ org label සහ කොටස් toggles ආරක්ෂා වේ. විමසුමක් නොමැතිව හුදෙක් පිරික්සීමට එය pipe කර ධාවනය කරන්න (උදා. `ccbar gallery | less`).
 
 > `ccbar` විධානය `~/.local/bin` හි පවතී. එය ඔබේ `PATH` හි නොමැති නම්, එය එක් කරන්න:
 > ```sh

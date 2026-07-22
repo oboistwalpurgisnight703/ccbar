@@ -289,7 +289,7 @@ cmd_gallery() {
   sample="{ \"model\": { \"display_name\": \"Opus 4.8\" }, \"workspace\": { \"current_dir\": \"$HOME/dev/ccbar\" }, \"effort\": { \"level\": \"high\" }, \"context_window\": { \"used_percentage\": 42 }, \"rate_limits\": { \"five_hour\": { \"used_percentage\": 63, \"resets_at\": $five }, \"seven_day\": { \"used_percentage\": 88, \"resets_at\": $week } } }"
 
   # Force all segments on and a sample label so previews show everything.
-  CCBAR_ORG="acme"
+  CCBAR_ORG="Acme"
   CCBAR_SHOW_EFFORT=1; CCBAR_SHOW_CTX=1; CCBAR_SHOW_5H=1; CCBAR_SHOW_7D=1
 
   printf "%b\n\n" "${bold}ccbar gallery${RESET} — preset looks you can apply"

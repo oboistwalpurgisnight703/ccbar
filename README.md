@@ -20,7 +20,7 @@ See your model, effort level, workspace, and live usage at a glance.
 `ccbar` renders a compact two-line status line under your Claude Code prompt:
 
 ```
-Kobble [Opus 4.8 high -> my-project]
+Acme [Opus 4.8 high -> my-project]
 ctx ████░░░░░░ 42%   5h  ██████░░░░ 63% (resets 2h 15m)   7d  ████████░░ 88% (resets 3d 4h)
 ```
 
