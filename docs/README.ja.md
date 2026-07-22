@@ -90,15 +90,47 @@ ccbar config
 
 ## コマンド
 
-| コマンド | 説明 |
-| --- | --- |
-| `ccbar config` | 対話式のセットアップウィザードを実行します。 |
-| `ccbar gallery` | プリセットの見た目を一覧表示し、任意で 1 つを適用します。 |
-| `ccbar demo` | サンプルデータでステータスラインをプレビューします。 |
-| `ccbar render` | Claude Code のステータス JSON を標準入力から読み取り、バーを出力します （Claude Code 自身が呼び出すのはこのコマンドです）。 |
-| `ccbar uninstall` | Claude Code の設定から ccbar の組み込みを削除します。 |
-| `ccbar version` | バージョンを出力します。 |
-| `ccbar help` | ヘルプを表示します。 |
+対話式のセットアップウィザードを実行します。
+
+```sh
+ccbar config
+```
+
+プリセットの見た目を一覧表示し、任意で 1 つを適用します。
+
+```sh
+ccbar gallery
+```
+
+サンプルデータでステータスラインをプレビューします。
+
+```sh
+ccbar demo
+```
+
+Claude Code のステータス JSON を標準入力から読み取り、バーを出力します （Claude Code 自身が呼び出すのはこのコマンドです）。
+
+```sh
+ccbar render
+```
+
+Claude Code の設定から ccbar の組み込みを削除します。
+
+```sh
+ccbar uninstall
+```
+
+バージョンを出力します。
+
+```sh
+ccbar version
+```
+
+ヘルプを表示します。
+
+```sh
+ccbar help
+```
 
 ### ギャラリー
 

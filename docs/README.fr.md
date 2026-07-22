@@ -90,15 +90,47 @@ Chaque valeur possède une valeur par défaut raisonnable, si bien qu'une config
 
 ## Commandes
 
-| Commande | Description |
-| --- | --- |
-| `ccbar config` | Lance l'assistant de configuration interactif. |
-| `ccbar gallery` | Parcourez les presets et appliquez-en un si vous le souhaitez. |
-| `ccbar demo` | Prévisualise la status line avec des données d'exemple. |
-| `ccbar render` | Lit le JSON de statut de Claude Code sur stdin et affiche la barre (c'est ce que Claude Code lui-même appelle). |
-| `ccbar uninstall` | Retire l'intégration de ccbar des paramètres de Claude Code. |
-| `ccbar version` | Affiche la version. |
-| `ccbar help` | Affiche l'aide. |
+Lance l'assistant de configuration interactif.
+
+```sh
+ccbar config
+```
+
+Parcourez les presets et appliquez-en un si vous le souhaitez.
+
+```sh
+ccbar gallery
+```
+
+Prévisualise la status line avec des données d'exemple.
+
+```sh
+ccbar demo
+```
+
+Lit le JSON de statut de Claude Code sur stdin et affiche la barre (c'est ce que Claude Code lui-même appelle).
+
+```sh
+ccbar render
+```
+
+Retire l'intégration de ccbar des paramètres de Claude Code.
+
+```sh
+ccbar uninstall
+```
+
+Affiche la version.
+
+```sh
+ccbar version
+```
+
+Affiche l'aide.
+
+```sh
+ccbar help
+```
 
 ### Gallery
 

@@ -90,15 +90,47 @@ ccbar config
 
 ## 명령어
 
-| 명령어 | 설명 |
-| --- | --- |
-| `ccbar config` | 대화형 설정 마법사를 실행합니다. |
-| `ccbar gallery` | 프리셋 모양을 둘러보고 원하면 하나를 적용합니다. |
-| `ccbar demo` | 샘플 데이터로 상태 표시줄을 미리 봅니다. |
-| `ccbar render` | stdin으로 Claude Code의 상태 JSON을 읽어 막대를 출력합니다 (Claude Code 자체가 호출하는 명령입니다). |
-| `ccbar uninstall` | Claude Code 설정에서 ccbar 연결을 제거합니다. |
-| `ccbar version` | 버전을 출력합니다. |
-| `ccbar help` | 도움말을 표시합니다. |
+대화형 설정 마법사를 실행합니다.
+
+```sh
+ccbar config
+```
+
+프리셋 모양을 둘러보고 원하면 하나를 적용합니다.
+
+```sh
+ccbar gallery
+```
+
+샘플 데이터로 상태 표시줄을 미리 봅니다.
+
+```sh
+ccbar demo
+```
+
+stdin으로 Claude Code의 상태 JSON을 읽어 막대를 출력합니다 (Claude Code 자체가 호출하는 명령입니다).
+
+```sh
+ccbar render
+```
+
+Claude Code 설정에서 ccbar 연결을 제거합니다.
+
+```sh
+ccbar uninstall
+```
+
+버전을 출력합니다.
+
+```sh
+ccbar version
+```
+
+도움말을 표시합니다.
+
+```sh
+ccbar help
+```
 
 ### 갤러리
 

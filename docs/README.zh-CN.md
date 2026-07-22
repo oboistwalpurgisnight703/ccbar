@@ -90,15 +90,47 @@ ccbar config
 
 ## 命令
 
-| 命令 | 说明 |
-| --- | --- |
-| `ccbar config` | 运行交互式设置向导。 |
-| `ccbar gallery` | 浏览预设外观，并可选择应用其中一个。 |
-| `ccbar demo` | 用示例数据预览状态栏。 |
-| `ccbar render` | 从标准输入读取 Claude Code 的状态 JSON 并打印状态栏 （这正是 Claude Code 本身所调用的命令）。 |
-| `ccbar uninstall` | 从 Claude Code 设置中移除 ccbar 的接入。 |
-| `ccbar version` | 打印版本号。 |
-| `ccbar help` | 显示帮助。 |
+运行交互式设置向导。
+
+```sh
+ccbar config
+```
+
+浏览预设外观，并可选择应用其中一个。
+
+```sh
+ccbar gallery
+```
+
+用示例数据预览状态栏。
+
+```sh
+ccbar demo
+```
+
+从标准输入读取 Claude Code 的状态 JSON 并打印状态栏 （这正是 Claude Code 本身所调用的命令）。
+
+```sh
+ccbar render
+```
+
+从 Claude Code 设置中移除 ccbar 的接入。
+
+```sh
+ccbar uninstall
+```
+
+打印版本号。
+
+```sh
+ccbar version
+```
+
+显示帮助。
+
+```sh
+ccbar help
+```
 
 ### 样式库
 

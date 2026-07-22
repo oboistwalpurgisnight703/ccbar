@@ -90,15 +90,47 @@ ccbar config
 
 ## විධාන
 
-| විධානය | විස්තරය |
-| --- | --- |
-| `ccbar config` | අන්තර්ක්‍රියාකාරී පිහිටුවීමේ wizard එක ධාවනය කරන්න. |
-| `ccbar gallery` | Preset පෙනුම් පිරික්සා අවශ්‍ය නම් එකක් යොදන්න. |
-| `ccbar demo` | නියැදි දත්ත සමඟ තත්ත්ව රේඛාව පෙරදසුන් කරන්න. |
-| `ccbar render` | stdin මත Claude Code හි තත්ත්ව JSON කියවා තීරුව මුද්‍රණය කරන්න (මෙය Claude Code විසින්ම කැඳවන දෙයයි). |
-| `ccbar uninstall` | Claude Code settings වෙතින් ccbar හි සම්බන්ධතාවය ඉවත් කරන්න. |
-| `ccbar version` | අනුවාදය මුද්‍රණය කරන්න. |
-| `ccbar help` | උදව් පෙන්වන්න. |
+අන්තර්ක්‍රියාකාරී පිහිටුවීමේ wizard එක ධාවනය කරන්න.
+
+```sh
+ccbar config
+```
+
+Preset පෙනුම් පිරික්සා අවශ්‍ය නම් එකක් යොදන්න.
+
+```sh
+ccbar gallery
+```
+
+නියැදි දත්ත සමඟ තත්ත්ව රේඛාව පෙරදසුන් කරන්න.
+
+```sh
+ccbar demo
+```
+
+stdin මත Claude Code හි තත්ත්ව JSON කියවා තීරුව මුද්‍රණය කරන්න (මෙය Claude Code විසින්ම කැඳවන දෙයයි).
+
+```sh
+ccbar render
+```
+
+Claude Code settings වෙතින් ccbar හි සම්බන්ධතාවය ඉවත් කරන්න.
+
+```sh
+ccbar uninstall
+```
+
+අනුවාදය මුද්‍රණය කරන්න.
+
+```sh
+ccbar version
+```
+
+උදව් පෙන්වන්න.
+
+```sh
+ccbar help
+```
 
 ### Gallery
 
