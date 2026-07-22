@@ -266,7 +266,9 @@ EOF
 }
 
 # cmd_demo — show how ccbar actually appears beneath the Claude Code prompt,
-# by framing a sample prompt and rendering the status line under it.
+# by framing a sample prompt and rendering the status line under it. Reflects
+# the user's own config, but shows a sample "Acme" label when none is set so
+# the org badge is always illustrated.
 cmd_demo() {
   local dim='\033[2m' accent='\033[1;36m' reset='\033[0m'
   local rule='────────────────────────────────────────────────────────────'
@@ -274,7 +276,15 @@ cmd_demo() {
   printf "%b%s%b\n" "$dim" "$rule" "$reset"
   printf " %b❯%b add a dark-mode toggle to the settings page\n" "$accent" "$reset"
   printf "%b%s%b\n" "$dim" "$rule" "$reset"
-  _demo_json | cmd_render
+
+  if ! command -v jq >/dev/null 2>&1; then
+    _demo_json | cmd_render        # prints the "jq not found" notice
+  else
+    load_config
+    [ -z "$CCBAR_ORG" ] && CCBAR_ORG="Acme"
+    apply_theme "$CCBAR_THEME"
+    _render_status "$(_demo_json)"
+  fi
   printf "\n"
 }
 
