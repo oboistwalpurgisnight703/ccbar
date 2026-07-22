@@ -19,10 +19,9 @@ Consulta tu modelo, nivel de esfuerzo, espacio de trabajo y uso en tiempo real d
 
 `ccbar` renderiza una línea de estado compacta de dos líneas debajo de tu prompt de Claude Code:
 
-```
-Acme [Opus 4.8 high -> my-project]
-ctx ████░░░░░░ 42%   5h  ██████░░░░ 63% (resets 2h 15m)   7d  ████████░░ 88% (resets 3d 4h)
-```
+<p align="center">
+  <img src="../assets/ccbar-preview.png" alt="ccbar status line preview" width="760">
+</p>
 
 - **Línea 1** — una insignia opcional de organización/etiqueta, el nombre del modelo, el nivel de esfuerzo actual y el directorio del espacio de trabajo.
 - **Línea 2** — barras de uso coloreadas para tu **ventana de contexto**, el límite de tasa de **5 horas** y el límite de tasa de **7 días**, cada una con una cuenta atrás hasta el momento en que se reinicia.

@@ -19,10 +19,9 @@
 
 `ccbar` は、Claude Code のプロンプトの下に、コンパクトな 2 行のステータスラインを表示します。
 
-```
-Acme [Opus 4.8 high -> my-project]
-ctx ████░░░░░░ 42%   5h  ██████░░░░ 63% (resets 2h 15m)   7d  ████████░░ 88% (resets 3d 4h)
-```
+<p align="center">
+  <img src="../assets/ccbar-preview.png" alt="ccbar status line preview" width="760">
+</p>
 
 - **1 行目** — 任意の組織／ラベルのバッジ、モデル名、現在の努力レベル、ワークスペースのディレクトリ。
 - **2 行目** — **コンテキストウィンドウ**、**5 時間**のレート制限、**7 日間**のレート制限を示す色付きの使用量バー。それぞれにリセットまでのカウントダウンが付きます。

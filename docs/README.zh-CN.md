@@ -19,10 +19,9 @@
 
 `ccbar` 会在你的 Claude Code 提示符下方渲染一个紧凑的两行状态栏：
 
-```
-Acme [Opus 4.8 high -> my-project]
-ctx ████░░░░░░ 42%   5h  ██████░░░░ 63% (resets 2h 15m)   7d  ████████░░ 88% (resets 3d 4h)
-```
+<p align="center">
+  <img src="../assets/ccbar-preview.png" alt="ccbar status line preview" width="760">
+</p>
 
 - **第 1 行** — 可选的组织/标签徽标、模型名称、当前投入级别，以及工作区目录。
 - **第 2 行** — 分别针对你的**上下文窗口**、**5 小时**速率限制和**7 天**速率限制的彩色用量条，每条都带有距离重置的倒计时。

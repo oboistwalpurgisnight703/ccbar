@@ -19,10 +19,9 @@
 
 `ccbar`는 Claude Code 프롬프트 아래에 간결한 두 줄짜리 상태 표시줄을 렌더링합니다:
 
-```
-Acme [Opus 4.8 high -> my-project]
-ctx ████░░░░░░ 42%   5h  ██████░░░░ 63% (resets 2h 15m)   7d  ████████░░ 88% (resets 3d 4h)
-```
+<p align="center">
+  <img src="../assets/ccbar-preview.png" alt="ccbar status line preview" width="760">
+</p>
 
 - **1번째 줄** — 선택적인 조직/레이블 배지, 모델 이름, 현재 노력 수준, 그리고 워크스페이스 디렉터리.
 - **2번째 줄** — **컨텍스트 창**, **5시간** 사용 한도, **7일** 사용 한도에 대한 색상 사용량 막대이며, 각각 재설정까지 남은 시간을 함께 표시합니다.

@@ -19,10 +19,9 @@ Visualisez votre modèle, votre niveau d'effort, votre espace de travail et votr
 
 `ccbar` affiche une status line compacte sur deux lignes sous votre invite Claude Code :
 
-```
-Acme [Opus 4.8 high -> my-project]
-ctx ████░░░░░░ 42%   5h  ██████░░░░ 63% (resets 2h 15m)   7d  ████████░░ 88% (resets 3d 4h)
-```
+<p align="center">
+  <img src="../assets/ccbar-preview.png" alt="ccbar status line preview" width="760">
+</p>
 
 - **Ligne 1** — un badge org/label optionnel, le nom du modèle, le niveau d'effort actuel et le répertoire de l'espace de travail.
 - **Ligne 2** — des barres d'utilisation colorées pour votre **fenêtre de contexte**, votre limite de débit sur **5 heures** et votre limite de débit sur **7 jours**, chacune accompagnée d'un compte à rebours jusqu'à sa réinitialisation.

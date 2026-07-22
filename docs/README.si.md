@@ -19,10 +19,9 @@
 
 `ccbar` මඟින් ඔබේ Claude Code prompt එක යටින් සංයුක්ත, පේළි දෙකකින් යුත් තත්ත්ව රේඛාවක් නිරූපණය කරයි:
 
-```
-Acme [Opus 4.8 high -> my-project]
-ctx ████░░░░░░ 42%   5h  ██████░░░░ 63% (resets 2h 15m)   7d  ████████░░ 88% (resets 3d 4h)
-```
+<p align="center">
+  <img src="../assets/ccbar-preview.png" alt="ccbar status line preview" width="760">
+</p>
 
 - **පේළි 1** — විකල්ප org/label ලාංඡනයක්, මාදිලියේ නම, වර්තමාන effort මට්ටම, සහ workspace නාමාවලිය.
 - **පේළි 2** — ඔබේ **context window** එක, **පැය 5** rate සීමාව, සහ **දින 7** rate සීමාව සඳහා වර්ණවත් භාවිත තීරු, ඒ එක් එකක් නැවත සැකසෙන (reset) වන අවස්ථාව දක්වා ගණන් කිරීමක් සමඟින්.

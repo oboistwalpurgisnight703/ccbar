@@ -19,10 +19,9 @@ See your model, effort level, workspace, and live usage at a glance.
 
 `ccbar` renders a compact two-line status line under your Claude Code prompt:
 
-```
-Acme [Opus 4.8 high -> my-project]
-ctx ████░░░░░░ 42%   5h  ██████░░░░ 63% (resets 2h 15m)   7d  ████████░░ 88% (resets 3d 4h)
-```
+<p align="center">
+  <img src="./assets/ccbar-preview.png" alt="ccbar status line preview" width="760">
+</p>
 
 - **Line 1** — an optional org/label badge, the model name, the current effort level, and the workspace directory.
 - **Line 2** — colored usage bars for your **context window**, **5-hour** rate limit, and **7-day** rate limit, each with a countdown to when it resets.
