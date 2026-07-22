@@ -131,16 +131,6 @@ Mostra a ajuda.
 ccbar help
 ```
 
-### Galeria
-
-Não sabe qual aparência você quer? Navegue por um conjunto de predefinições selecionadas — cada uma uma combinação de tema, estilo de barra e largura — e aplique uma com uma tecla:
-
-```sh
-ccbar gallery
-```
-
-Ela imprime cada predefinição renderizada com dados de exemplo e então (em um terminal) pergunta qual aplicar. Aplicar uma predefinição altera apenas o tema e o estilo de barra — seu rótulo de organização e as alternâncias de segmentos são mantidos. Execute-a com pipe (ex.: `ccbar gallery | less`) para apenas navegar sem o prompt.
-
 > O comando `ccbar` fica em `~/.local/bin`. Se isso não estiver no seu `PATH`, adicione:
 > ```sh
 > echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc   # ou ~/.bashrc

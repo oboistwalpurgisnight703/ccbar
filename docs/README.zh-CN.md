@@ -131,16 +131,6 @@ ccbar version
 ccbar help
 ```
 
-### 样式库
-
-还不确定想要哪种外观？浏览一组精选预设——每个预设都是主题、用量条样式和宽度的组合——只需一次按键即可应用其中一个：
-
-```sh
-ccbar gallery
-```
-
-它会用示例数据渲染并打印每个预设，然后（在终端中）询问要应用哪一个。应用预设只会更改主题和用量条样式——你的标签和分段开关将保持不变。若通过管道运行（例如 `ccbar gallery | less`），则只浏览而不显示提示。
-
 > `ccbar` 命令位于 `~/.local/bin`。如果该目录不在你的 `PATH` 中，请将其添加进去：
 > ```sh
 > echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc   # 或 ~/.bashrc

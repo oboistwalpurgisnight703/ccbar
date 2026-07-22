@@ -131,16 +131,6 @@ Affiche l'aide.
 ccbar help
 ```
 
-### Gallery
-
-Vous ne savez pas quel style choisir ? Parcourez un ensemble de presets sélectionnés — chacun étant une combinaison de thème, de style de barre et de largeur — et appliquez-en un en une touche :
-
-```sh
-ccbar gallery
-```
-
-Elle affiche chaque preset rendu avec des données d'exemple, puis (dans un terminal) vous demande lequel appliquer. Appliquer un preset ne modifie que le thème et le style des barres — votre org/label et l'affichage de vos segments sont conservés. Lancez-la avec un pipe (par ex. `ccbar gallery | less`) pour simplement parcourir sans l'invite.
-
 > La commande `ccbar` se trouve dans `~/.local/bin`. Si ce répertoire n'est pas dans votre `PATH`, ajoutez-le :
 > ```sh
 > echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc   # ou ~/.bashrc

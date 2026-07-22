@@ -131,16 +131,6 @@ Show help.
 ccbar help
 ```
 
-### Galería
-
-¿No estás seguro de qué aspecto quieres? Explora un conjunto de preajustes seleccionados —cada uno una combinación de tema, estilo de barra y ancho— y aplica uno con una sola pulsación:
-
-```sh
-ccbar gallery
-```
-
-Imprime cada preajuste renderizado con datos de ejemplo y luego (en una terminal) pregunta cuál aplicar. Aplicar un preajuste cambia solo el tema y el estilo de barra —tu etiqueta de organización y los interruptores de segmentos se conservan—. Ejecútalo canalizado (p. ej. `ccbar gallery | less`) para solo explorar sin la pregunta.
-
 > El comando `ccbar` reside en `~/.local/bin`. Si eso no está en tu `PATH`, añádelo:
 > ```sh
 > echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc   # or ~/.bashrc
