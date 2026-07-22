@@ -6,3 +6,8 @@
 # Local test sandboxes
 /tmp-home/
 *.bak
+
+# Never commit npm auth / secrets
+.npmrc
+node_modules/
+*.tgz
