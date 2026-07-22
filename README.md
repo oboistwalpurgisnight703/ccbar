@@ -89,16 +89,15 @@ Every value has a sensible default, so a missing or partial config still renders
 
 ## Commands
 
-```
-ccbar config       Run the interactive setup wizard.
-ccbar gallery      Browse preset looks and optionally apply one.
-ccbar demo         Preview the status line with sample data.
-ccbar render       Read Claude Code's status JSON on stdin and print the bar
-                   (this is what Claude Code itself calls).
-ccbar uninstall    Remove ccbar's wiring from Claude Code settings.
-ccbar version      Print the version.
-ccbar help         Show help.
-```
+| Command | Description |
+| --- | --- |
+| `ccbar config` | Run the interactive setup wizard. |
+| `ccbar gallery` | Browse preset looks and optionally apply one. |
+| `ccbar demo` | Preview the status line with sample data. |
+| `ccbar render` | Read Claude Code's status JSON on stdin and print the bar (this is what Claude Code itself calls). |
+| `ccbar uninstall` | Remove ccbar's wiring from Claude Code settings. |
+| `ccbar version` | Print the version. |
+| `ccbar help` | Show help. |
 
 ### Gallery
 

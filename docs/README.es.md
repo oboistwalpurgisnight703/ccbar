@@ -90,16 +90,15 @@ Cada valor tiene un valor predeterminado sensato, por lo que una configuración 
 
 ## Comandos
 
-```
-ccbar config       Run the interactive setup wizard.
-ccbar gallery      Explora aspectos preconfigurados y, opcionalmente, aplica uno.
-ccbar demo         Preview the status line with sample data.
-ccbar render       Read Claude Code's status JSON on stdin and print the bar
-                   (this is what Claude Code itself calls).
-ccbar uninstall    Remove ccbar's wiring from Claude Code settings.
-ccbar version      Print the version.
-ccbar help         Show help.
-```
+| Comando | Descripción |
+| --- | --- |
+| `ccbar config` | Run the interactive setup wizard. |
+| `ccbar gallery` | Explora aspectos preconfigurados y, opcionalmente, aplica uno. |
+| `ccbar demo` | Preview the status line with sample data. |
+| `ccbar render` | Read Claude Code's status JSON on stdin and print the bar (this is what Claude Code itself calls). |
+| `ccbar uninstall` | Remove ccbar's wiring from Claude Code settings. |
+| `ccbar version` | Print the version. |
+| `ccbar help` | Show help. |
 
 ### Galería
 

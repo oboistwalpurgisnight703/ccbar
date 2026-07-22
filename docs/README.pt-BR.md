@@ -90,16 +90,15 @@ Todo valor tem um padrão sensato, então uma configuração ausente ou parcial 
 
 ## Comandos
 
-```
-ccbar config       Executa o assistente de configuração interativo.
-ccbar gallery      Navegue pelas aparências predefinidas e, opcionalmente, aplique uma.
-ccbar demo         Pré-visualiza a status line com dados de exemplo.
-ccbar render       Lê o JSON de status do Claude Code no stdin e imprime a barra
-                   (é isto que o próprio Claude Code chama).
-ccbar uninstall    Remove a integração do ccbar das configurações do Claude Code.
-ccbar version      Imprime a versão.
-ccbar help         Mostra a ajuda.
-```
+| Comando | Descrição |
+| --- | --- |
+| `ccbar config` | Executa o assistente de configuração interativo. |
+| `ccbar gallery` | Navegue pelas aparências predefinidas e, opcionalmente, aplique uma. |
+| `ccbar demo` | Pré-visualiza a status line com dados de exemplo. |
+| `ccbar render` | Lê o JSON de status do Claude Code no stdin e imprime a barra (é isto que o próprio Claude Code chama). |
+| `ccbar uninstall` | Remove a integração do ccbar das configurações do Claude Code. |
+| `ccbar version` | Imprime a versão. |
+| `ccbar help` | Mostra a ajuda. |
 
 ### Galeria
 

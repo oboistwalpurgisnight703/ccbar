@@ -90,16 +90,15 @@ ccbar config
 
 ## कमांड्स
 
-```
-ccbar config       इंटरैक्टिव सेटअप विज़ार्ड चलाएँ।
-ccbar gallery      प्रीसेट लुक्स ब्राउज़ करें और वैकल्पिक रूप से किसी एक को लागू करें।
-ccbar demo         नमूना डेटा के साथ स्टेटस लाइन का पूर्वावलोकन करें।
-ccbar render       stdin पर Claude Code का स्टेटस JSON पढ़ें और बार प्रिंट करें
-                   (यही वह है जिसे Claude Code स्वयं कॉल करता है)।
-ccbar uninstall    Claude Code सेटिंग्स से ccbar की वायरिंग हटाएँ।
-ccbar version      वर्ज़न प्रिंट करें।
-ccbar help         मदद दिखाएँ।
-```
+| कमांड | विवरण |
+| --- | --- |
+| `ccbar config` | इंटरैक्टिव सेटअप विज़ार्ड चलाएँ। |
+| `ccbar gallery` | प्रीसेट लुक्स ब्राउज़ करें और वैकल्पिक रूप से किसी एक को लागू करें। |
+| `ccbar demo` | नमूना डेटा के साथ स्टेटस लाइन का पूर्वावलोकन करें। |
+| `ccbar render` | stdin पर Claude Code का स्टेटस JSON पढ़ें और बार प्रिंट करें (यही वह है जिसे Claude Code स्वयं कॉल करता है)। |
+| `ccbar uninstall` | Claude Code सेटिंग्स से ccbar की वायरिंग हटाएँ। |
+| `ccbar version` | वर्ज़न प्रिंट करें। |
+| `ccbar help` | मदद दिखाएँ। |
 
 ### गैलरी
 
