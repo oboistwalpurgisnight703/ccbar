@@ -1,0 +1,482 @@
+#!/usr/bin/env bash
+#
+# ccbar — a configurable status line for Claude Code.
+#
+# Renders (across two lines): an optional org badge, the model name, the
+# effort level, the workspace directory, and colored usage bars for the
+# context window, the 5-hour rate limit, and the 7-day rate limit — each
+# with a reset countdown.
+#
+# Usage:
+#   ccbar render        Read Claude Code's status JSON on stdin and print the bar.
+#   ccbar config        Run the interactive setup wizard.
+#   ccbar demo          Preview the status line with sample data.
+#   ccbar uninstall     Remove ccbar's wiring from Claude Code settings.
+#   ccbar version       Print the version.
+#   ccbar help          Show this help.
+#
+# Home: https://github.com/lakpriya1s/ccbar
+# License: MIT
+
+CCBAR_VERSION="0.1.0"
+
+# ----------------------------------------------------------------------------
+# Paths
+# ----------------------------------------------------------------------------
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/ccbar"
+CONFIG_FILE="$CONFIG_DIR/config"
+SETTINGS_FILE="$HOME/.claude/settings.json"
+INSTALL_BIN="$HOME/.local/bin/ccbar"
+
+# ----------------------------------------------------------------------------
+# Config loading (with backward-compatible defaults)
+# ----------------------------------------------------------------------------
+load_config() {
+  # Source the user's config if present. It's a plain KEY="value" file.
+  if [ -f "$CONFIG_FILE" ]; then
+    # shellcheck disable=SC1090
+    . "$CONFIG_FILE"
+  fi
+
+  # Defaults — chosen so a missing/partial config still renders sensibly.
+  CCBAR_ORG="${CCBAR_ORG-}"
+  CCBAR_THEME="${CCBAR_THEME:-default}"
+  CCBAR_BAR_WIDTH="${CCBAR_BAR_WIDTH:-10}"
+  CCBAR_BAR_FILLED="${CCBAR_BAR_FILLED:-█}"
+  CCBAR_BAR_EMPTY="${CCBAR_BAR_EMPTY:-░}"
+  CCBAR_SHOW_EFFORT="${CCBAR_SHOW_EFFORT:-1}"
+  CCBAR_SHOW_CTX="${CCBAR_SHOW_CTX:-1}"
+  CCBAR_SHOW_5H="${CCBAR_SHOW_5H:-1}"
+  CCBAR_SHOW_7D="${CCBAR_SHOW_7D:-1}"
+}
+
+# ----------------------------------------------------------------------------
+# Themes — set the color variables used by the renderer.
+# ----------------------------------------------------------------------------
+RESET='\033[0m'
+
+apply_theme() {
+  local theme="$1"
+  case "$theme" in
+    mono)
+      C_MODEL='\033[2m'
+      C_ARROW='\033[2;37m'
+      C_DIR='\033[0;37m'
+      C_ORG='\033[1;37m'
+      C_BRACKET='\033[2;37m'
+      C_LABEL='\033[2;37m'
+      C_RESETTXT='\033[2m'
+      BAR_LOW='\033[2;37m'; BAR_MID='\033[0;37m'; BAR_HIGH='\033[1;37m'
+      E_LOW='\033[2;37m'; E_MED='\033[0;37m'; E_HIGH='\033[0;37m'
+      E_XHIGH='\033[1;37m'; E_MAX='\033[1;37m'; E_DEFAULT='\033[2m'
+      ;;
+    vivid)
+      C_MODEL='\033[1;37m'
+      C_ARROW='\033[0;90m'
+      C_DIR='\033[1;36m'
+      C_ORG='\033[1;31m'
+      C_BRACKET='\033[0;90m'
+      C_LABEL='\033[0;90m'
+      C_RESETTXT='\033[0;90m'
+      BAR_LOW='\033[1;32m'; BAR_MID='\033[1;33m'; BAR_HIGH='\033[1;31m'
+      E_LOW='\033[1;32m'; E_MED='\033[1;36m'; E_HIGH='\033[1;33m'
+      E_XHIGH='\033[1;35m'; E_MAX='\033[1;31m'; E_DEFAULT='\033[1;37m'
+      ;;
+    *) # default
+      C_MODEL='\033[2m'
+      C_ARROW='\033[2;37m'
+      C_DIR='\033[2;36m'
+      C_ORG='\033[1;31m'
+      C_BRACKET='\033[2;37m'
+      C_LABEL='\033[2;37m'
+      C_RESETTXT='\033[2m'
+      BAR_LOW='\033[0;32m'; BAR_MID='\033[2;33m'; BAR_HIGH='\033[0;31m'
+      E_LOW='\033[0;32m'; E_MED='\033[2;36m'; E_HIGH='\033[2;33m'
+      E_XHIGH='\033[2;35m'; E_MAX='\033[0;31m'; E_DEFAULT='\033[2m'
+      ;;
+  esac
+}
+
+# ----------------------------------------------------------------------------
+# Small renderers
+# ----------------------------------------------------------------------------
+
+# render_bar PCT — print a colored block bar for a 0-100 percentage.
+render_bar() {
+  local pct_raw="$1"
+  local pct
+  pct=$(printf '%.0f' "$pct_raw" 2>/dev/null || echo 0)
+  [ "$pct" -gt 100 ] && pct=100
+  [ "$pct" -lt 0 ] && pct=0
+
+  local color="$BAR_LOW"
+  if [ "$pct" -ge 80 ]; then
+    color="$BAR_HIGH"
+  elif [ "$pct" -ge 50 ]; then
+    color="$BAR_MID"
+  fi
+
+  local filled=$(( pct * CCBAR_BAR_WIDTH / 100 ))
+  local empty=$(( CCBAR_BAR_WIDTH - filled ))
+  local bar="" i
+  for ((i = 0; i < filled; i++)); do bar="${bar}${CCBAR_BAR_FILLED}"; done
+  for ((i = 0; i < empty; i++)); do bar="${bar}${CCBAR_BAR_EMPTY}"; done
+
+  printf "%b" "${color}${bar}${RESET}"
+}
+
+# render_reset EPOCH — print "Xd Yh" / "Xh Ym" / "Xm" until a unix epoch, or "now".
+render_reset() {
+  local resets_at="$1"
+  local now diff
+  now=$(date +%s)
+  diff=$(( resets_at - now ))
+  if [ "$diff" -le 0 ]; then
+    printf "now"
+    return
+  fi
+  local days=$(( diff / 86400 ))
+  local hours=$(( (diff % 86400) / 3600 ))
+  local mins=$(( (diff % 3600) / 60 ))
+  if [ "$days" -gt 0 ]; then
+    printf "%dd %dh" "$days" "$hours"
+  elif [ "$hours" -gt 0 ]; then
+    printf "%dh %dm" "$hours" "$mins"
+  else
+    printf "%dm" "$mins"
+  fi
+}
+
+# ----------------------------------------------------------------------------
+# render — the actual status line
+# ----------------------------------------------------------------------------
+cmd_render() {
+  if ! command -v jq >/dev/null 2>&1; then
+    printf "ccbar: jq not found — run 'ccbar config' or install jq\n"
+    return 0
+  fi
+
+  load_config
+  apply_theme "$CCBAR_THEME"
+
+  local input
+  input=$(cat)
+
+  local model cwd dir effort
+  model=$(printf '%s' "$input" | jq -r '.model.display_name // "?"')
+  cwd=$(printf '%s' "$input" | jq -r '.workspace.current_dir // .cwd // ""')
+  dir=$(basename "$cwd" 2>/dev/null)
+  effort=$(printf '%s' "$input" | jq -r '.effort.level // empty')
+
+  local ctx_pct five_pct five_reset week_pct week_reset
+  ctx_pct=$(printf '%s' "$input" | jq -r '.context_window.used_percentage // empty')
+  five_pct=$(printf '%s' "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
+  five_reset=$(printf '%s' "$input" | jq -r '.rate_limits.five_hour.resets_at // empty')
+  week_pct=$(printf '%s' "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
+  week_reset=$(printf '%s' "$input" | jq -r '.rate_limits.seven_day.resets_at // empty')
+
+  # ---- line 1: model [effort] -> dir, with optional org badge ----
+  local inner="${C_MODEL}${model}${RESET}"
+
+  if [ "$CCBAR_SHOW_EFFORT" = "1" ] && [ -n "$effort" ]; then
+    local ecolor
+    case "$effort" in
+      low) ecolor="$E_LOW" ;;
+      medium) ecolor="$E_MED" ;;
+      high) ecolor="$E_HIGH" ;;
+      xhigh) ecolor="$E_XHIGH" ;;
+      max) ecolor="$E_MAX" ;;
+      *) ecolor="$E_DEFAULT" ;;
+    esac
+    inner="${inner} ${ecolor}${effort}${RESET}"
+  fi
+
+  if [ -n "$dir" ]; then
+    inner="${inner} ${C_ARROW}->${RESET} ${C_DIR}${dir}${RESET}"
+  fi
+
+  local line1
+  if [ -n "$CCBAR_ORG" ]; then
+    line1="${C_ORG}${CCBAR_ORG}${RESET} ${C_BRACKET}[${RESET}${inner}${C_BRACKET}]${RESET}"
+  else
+    line1="$inner"
+  fi
+
+  # ---- line 2: usage bars ----
+  local line2="" seg bar
+  if [ "$CCBAR_SHOW_CTX" = "1" ] && [ -n "$ctx_pct" ]; then
+    bar=$(render_bar "$ctx_pct")
+    line2="${C_LABEL}ctx${RESET} ${bar} $(printf '%.0f' "$ctx_pct")%"
+  fi
+
+  if [ "$CCBAR_SHOW_5H" = "1" ] && [ -n "$five_pct" ]; then
+    bar=$(render_bar "$five_pct")
+    seg="${C_LABEL}5h${RESET}  ${bar} $(printf '%.0f' "$five_pct")%"
+    if [ -n "$five_reset" ]; then
+      seg="${seg} ${C_RESETTXT}(resets ${RESET}$(render_reset "$five_reset")${C_RESETTXT})${RESET}"
+    fi
+    if [ -n "$line2" ]; then line2="${line2}   ${seg}"; else line2="$seg"; fi
+  fi
+
+  if [ "$CCBAR_SHOW_7D" = "1" ] && [ -n "$week_pct" ]; then
+    bar=$(render_bar "$week_pct")
+    seg="${C_LABEL}7d${RESET}  ${bar} $(printf '%.0f' "$week_pct")%"
+    if [ -n "$week_reset" ]; then
+      seg="${seg} ${C_RESETTXT}(resets ${RESET}$(render_reset "$week_reset")${C_RESETTXT})${RESET}"
+    fi
+    if [ -n "$line2" ]; then line2="${line2}   ${seg}"; else line2="$seg"; fi
+  fi
+
+  printf "%b" "$line1"
+  [ -n "$line2" ] && printf "\n%b" "$line2"
+  printf "\n"
+}
+
+# ----------------------------------------------------------------------------
+# demo — preview with realistic sample data
+# ----------------------------------------------------------------------------
+cmd_demo() {
+  local now five week
+  now=$(date +%s)
+  five=$(( now + 2 * 3600 + 15 * 60 ))
+  week=$(( now + 3 * 86400 + 4 * 3600 ))
+  cmd_render <<EOF
+{
+  "model": { "display_name": "Opus 4.8" },
+  "workspace": { "current_dir": "$HOME/dev/ccbar" },
+  "effort": { "level": "high" },
+  "context_window": { "used_percentage": 42 },
+  "rate_limits": {
+    "five_hour": { "used_percentage": 63, "resets_at": $five },
+    "seven_day": { "used_percentage": 88, "resets_at": $week }
+  }
+}
+EOF
+}
+
+# ----------------------------------------------------------------------------
+# config — interactive setup wizard (reads from /dev/tty so it works under
+# `curl … | bash`, where stdin is the pipe rather than the keyboard).
+# ----------------------------------------------------------------------------
+TTY_IN="/dev/tty"
+TTY_OUT="/dev/tty"
+
+# Terminal input fd, opened once by the wizard (see cmd_config). Empty = closed.
+TTY_FD=""
+
+# Is a readable controlling terminal available?
+tty_ok() { { true 0<"$TTY_IN"; } 2>/dev/null; }
+
+_say() {
+  if tty_ok; then printf "%b\n" "$1" >"$TTY_OUT"; else printf "%b\n" "$1"; fi
+}
+
+# _readline -> reads one line into the global REPLY_LINE ("" on failure/EOF).
+# Reads from the shared TTY_FD when open, otherwise opens /dev/tty per call.
+_readline() {
+  if [ -n "$TTY_FD" ]; then
+    IFS= read -r -u "$TTY_FD" REPLY_LINE || REPLY_LINE=""
+  else
+    IFS= read -r REPLY_LINE <"$TTY_IN" || REPLY_LINE=""
+  fi
+}
+
+# ask PROMPT DEFAULT -> echoes the answer (falls back to default with no tty)
+ask() {
+  local prompt="$1" default="$2"
+  if ! tty_ok; then printf "%s" "$default"; return; fi
+  if [ -n "$default" ]; then
+    printf "%b [%s]: " "$prompt" "$default" >"$TTY_OUT"
+  else
+    printf "%b: " "$prompt" >"$TTY_OUT"
+  fi
+  _readline
+  [ -z "$REPLY_LINE" ] && REPLY_LINE="$default"
+  printf "%s" "$REPLY_LINE"
+}
+
+# ask_yn PROMPT DEFAULT(1|0) -> echoes 1 or 0 (falls back to default with no tty)
+ask_yn() {
+  local prompt="$1" default="$2" hint
+  if ! tty_ok; then printf "%s" "$default"; return; fi
+  if [ "$default" = "1" ]; then hint="Y/n"; else hint="y/N"; fi
+  printf "%b [%s]: " "$prompt" "$hint" >"$TTY_OUT"
+  _readline
+  case "$REPLY_LINE" in
+    [Yy]*) printf "1" ;;
+    [Nn]*) printf "0" ;;
+    *)     printf "%s" "$default" ;;
+  esac
+}
+
+cmd_config() {
+  # Must have a readable controlling terminal (not just an existing /dev/tty).
+  if ! { true 0<"$TTY_IN"; } 2>/dev/null; then
+    _err "no interactive terminal available — run 'ccbar config' from a terminal"
+    return 1
+  fi
+
+  # Open the terminal once so every prompt reads from the same stream.
+  exec 3<"$TTY_IN"
+  TTY_FD=3
+
+  # Start from whatever is currently configured.
+  load_config
+
+  _say ""
+  _say "\033[1mccbar setup\033[0m — press Enter to keep the [default].\n"
+
+  local org theme width filled empty style
+  local show_effort show_ctx show_5h show_7d
+
+  org=$(ask "Org / label to show at the front (blank to hide)" "$CCBAR_ORG")
+
+  _say ""
+  _say "Which segments should appear?"
+  show_effort=$(ask_yn "  Effort level (low/high/max…)" "$CCBAR_SHOW_EFFORT")
+  show_ctx=$(ask_yn "  Context window bar" "$CCBAR_SHOW_CTX")
+  show_5h=$(ask_yn "  5-hour usage bar" "$CCBAR_SHOW_5H")
+  show_7d=$(ask_yn "  7-day usage bar" "$CCBAR_SHOW_7D")
+
+  _say ""
+  _say "Color theme:"
+  _say "  1) default  — subtle, dimmed colors"
+  _say "  2) mono     — grayscale only"
+  _say "  3) vivid    — bright, high-contrast"
+  local tsel tdefault
+  case "$CCBAR_THEME" in mono) tdefault=2 ;; vivid) tdefault=3 ;; *) tdefault=1 ;; esac
+  tsel=$(ask "  Choose 1-3" "$tdefault")
+  case "$tsel" in 2) theme="mono" ;; 3) theme="vivid" ;; *) theme="default" ;; esac
+
+  _say ""
+  _say "Bar style:"
+  _say "  1) █░   blocks (default)"
+  _say "  2) ▓░   shaded"
+  _say "  3) ■□   squares"
+  _say "  4) =-   ascii"
+  _say "  5) custom"
+  style=$(ask "  Choose 1-5" "1")
+  case "$style" in
+    2) filled="▓"; empty="░" ;;
+    3) filled="■"; empty="□" ;;
+    4) filled="="; empty="-" ;;
+    5)
+      filled=$(ask "    Filled char" "$CCBAR_BAR_FILLED")
+      empty=$(ask "    Empty char" "$CCBAR_BAR_EMPTY")
+      ;;
+    *) filled="█"; empty="░" ;;
+  esac
+
+  width=$(ask "Bar width (cells)" "$CCBAR_BAR_WIDTH")
+  case "$width" in ''|*[!0-9]*) width="$CCBAR_BAR_WIDTH" ;; esac
+  [ "$width" -lt 1 ] 2>/dev/null && width="$CCBAR_BAR_WIDTH"
+
+  # Write the config file.
+  mkdir -p "$CONFIG_DIR"
+  cat >"$CONFIG_FILE" <<EOF
+# ccbar config — generated by \`ccbar config\`
+# Edit by hand or re-run \`ccbar config\` at any time.
+CCBAR_ORG="$org"
+CCBAR_THEME="$theme"
+CCBAR_BAR_WIDTH="$width"
+CCBAR_BAR_FILLED="$filled"
+CCBAR_BAR_EMPTY="$empty"
+CCBAR_SHOW_EFFORT="$show_effort"
+CCBAR_SHOW_CTX="$show_ctx"
+CCBAR_SHOW_5H="$show_5h"
+CCBAR_SHOW_7D="$show_7d"
+EOF
+
+  _say ""
+  _say "Saved to \033[1m$CONFIG_FILE\033[0m"
+  _say ""
+  _say "Preview:"
+  # Render preview to the terminal.
+  cmd_demo >"$TTY_OUT"
+  _say ""
+
+  # Close the terminal fd.
+  exec 3<&-
+  TTY_FD=""
+}
+
+# ----------------------------------------------------------------------------
+# uninstall — unwire from Claude Code settings; optionally remove files.
+# ----------------------------------------------------------------------------
+cmd_uninstall() {
+  if [ -f "$SETTINGS_FILE" ] && command -v jq >/dev/null 2>&1; then
+    if jq -e '.statusLine' "$SETTINGS_FILE" >/dev/null 2>&1; then
+      cp "$SETTINGS_FILE" "${SETTINGS_FILE}.bak"
+      local tmp="${SETTINGS_FILE}.ccbar.tmp"
+      if jq 'del(.statusLine)' "$SETTINGS_FILE" >"$tmp" 2>/dev/null; then
+        mv "$tmp" "$SETTINGS_FILE"
+        _say "Removed statusLine from $SETTINGS_FILE (backup at ${SETTINGS_FILE}.bak)"
+      else
+        rm -f "$tmp"
+        _err "failed to edit $SETTINGS_FILE — left unchanged"
+      fi
+    else
+      _say "No ccbar statusLine found in $SETTINGS_FILE"
+    fi
+  fi
+
+  local rm_files
+  rm_files=$(ask_yn "Also delete the ccbar binary and config?" "0")
+  if [ "$rm_files" = "1" ]; then
+    rm -f "$INSTALL_BIN"
+    rm -rf "$CONFIG_DIR"
+    _say "Removed $INSTALL_BIN and $CONFIG_DIR"
+  fi
+  _say "Done. Restart Claude Code (or start a new session) for changes to take effect."
+}
+
+# ----------------------------------------------------------------------------
+# meta
+# ----------------------------------------------------------------------------
+_err() { printf "ccbar: %b\n" "$1" >&2; }
+
+cmd_version() { printf "ccbar %s\n" "$CCBAR_VERSION"; }
+
+cmd_help() {
+  cat <<'EOF'
+ccbar — a configurable status line for Claude Code
+
+Usage:
+  ccbar render       Read Claude Code's status JSON on stdin and print the bar.
+                     (This is what Claude Code itself calls.)
+  ccbar config       Run the interactive setup wizard.
+  ccbar demo         Preview the status line with sample data.
+  ccbar uninstall    Remove ccbar's wiring from Claude Code settings.
+  ccbar version      Print the version.
+  ccbar help         Show this help.
+
+Config file: ${XDG_CONFIG_HOME:-~/.config}/ccbar/config
+Home:        https://github.com/lakpriya1s/ccbar
+EOF
+}
+
+# ----------------------------------------------------------------------------
+# dispatch
+# ----------------------------------------------------------------------------
+main() {
+  case "${1:-}" in
+    render)                shift; cmd_render "$@" ;;
+    config|configure|init) cmd_config ;;
+    demo)                  cmd_demo ;;
+    uninstall)             cmd_uninstall ;;
+    version|--version|-v)  cmd_version ;;
+    help|--help|-h)        cmd_help ;;
+    "")
+      # No subcommand: if stdin is piped (Claude Code), render; else help.
+      if [ -t 0 ]; then cmd_help; else cmd_render; fi
+      ;;
+    *)
+      _err "unknown command '$1'"
+      printf "\n" >&2
+      cmd_help >&2
+      exit 2
+      ;;
+  esac
+}
+
+main "$@"

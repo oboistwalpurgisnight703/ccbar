@@ -1,0 +1,8 @@
+# Editor / OS cruft
+.DS_Store
+*.swp
+*~
+
+# Local test sandboxes
+/tmp-home/
+*.bak
