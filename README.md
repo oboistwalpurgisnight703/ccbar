@@ -1,19 +1,21 @@
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./assets/ccbar-logo-horizontal-dark.svg">
-    <img src="./assets/ccbar-logo-horizontal.svg" alt="ccbar — Claude Code status line" width="640">
-  </picture>
-</p>
+<div align="center">
 
-<p align="center">
-  <b>A configurable status line for <a href="https://claude.com/claude-code">Claude Code</a></b><br>
-  See your model, effort level, workspace, and live usage at a glance.
-</p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/ccbar-logo-horizontal-dark.svg">
+  <img src="./assets/ccbar-logo-horizontal.svg" alt="ccbar — Claude Code status line" width="640">
+</picture>
 
-<p align="center">
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
-  <a href="#requirements"><img src="https://img.shields.io/badge/shell-bash-89e051.svg" alt="Shell: bash"></a>
-</p>
+**A configurable status line for [Claude Code](https://claude.com/claude-code)**<br>
+See your model, effort level, workspace, and live usage at a glance.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Shell: bash](https://img.shields.io/badge/shell-bash-89e051.svg)](#requirements)
+
+**English** · [简体中文](docs/README.zh-CN.md) · [Español](docs/README.es.md) · [हिन्दी](docs/README.hi.md) · [Português](docs/README.pt-BR.md) · [日本語](docs/README.ja.md) · [Français](docs/README.fr.md) · [한국어](docs/README.ko.md) · [සිංහල](docs/README.si.md)
+
+</div>
+
+---
 
 `ccbar` renders a compact two-line status line under your Claude Code prompt:
 
