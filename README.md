@@ -91,6 +91,7 @@ Every value has a sensible default, so a missing or partial config still renders
 
 ```
 ccbar config       Run the interactive setup wizard.
+ccbar gallery      Browse preset looks and optionally apply one.
 ccbar demo         Preview the status line with sample data.
 ccbar render       Read Claude Code's status JSON on stdin and print the bar
                    (this is what Claude Code itself calls).
@@ -98,6 +99,20 @@ ccbar uninstall    Remove ccbar's wiring from Claude Code settings.
 ccbar version      Print the version.
 ccbar help         Show help.
 ```
+
+### Gallery
+
+Not sure which look you want? Browse a set of curated presets — each a
+combination of theme, bar style, and width — and apply one in a keystroke:
+
+```sh
+ccbar gallery
+```
+
+It prints every preset rendered with sample data, then (in a terminal) asks
+which to apply. Applying a preset changes only the theme and bar style — your
+org label and segment toggles are kept. Run it piped (e.g. `ccbar gallery | less`)
+to just browse without the prompt.
 
 > The `ccbar` command lives in `~/.local/bin`. If that's not on your `PATH`, add it:
 > ```sh

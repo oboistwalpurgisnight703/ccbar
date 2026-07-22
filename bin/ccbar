@@ -18,7 +18,7 @@
 # Home: https://github.com/lakpriya1s/ccbar
 # License: MIT
 
-CCBAR_VERSION="0.1.0"
+CCBAR_VERSION="0.2.0"
 
 # ----------------------------------------------------------------------------
 # Paths
@@ -161,6 +161,15 @@ cmd_render() {
 
   local input
   input=$(cat)
+  _render_status "$input"
+}
+
+# ----------------------------------------------------------------------------
+# _render_status JSON — print the two status lines from a JSON string using the
+# currently-loaded config + theme. Shared by render, demo, and gallery.
+# ----------------------------------------------------------------------------
+_render_status() {
+  local input="$1"
 
   local model cwd dir effort
   model=$(printf '%s' "$input" | jq -r '.model.display_name // "?"')
@@ -251,6 +260,108 @@ cmd_demo() {
     "seven_day": { "used_percentage": 88, "resets_at": $week }
   }
 }
+EOF
+}
+
+# ----------------------------------------------------------------------------
+# gallery — browse curated preset looks and optionally apply one.
+# ----------------------------------------------------------------------------
+
+# Curated presets, one per line: "Name|theme|width|filled|empty"
+CCBAR_PRESETS='Default blocks|default|10|█|░
+Mono blocks|mono|10|█|░
+Vivid blocks|vivid|12|█|░
+Default shaded|default|10|▓|░
+Vivid squares|vivid|12|■|□
+Mono ascii|mono|14|=|-'
+
+cmd_gallery() {
+  if ! command -v jq >/dev/null 2>&1; then
+    _err "jq not found — install jq to preview the gallery (see the README)"
+    return 1
+  fi
+
+  local bold='\033[1m' dim='\033[2m'
+
+  # Sample data used for every preview.
+  local now five week sample
+  now=$(date +%s); five=$(( now + 2 * 3600 + 15 * 60 )); week=$(( now + 3 * 86400 + 4 * 3600 ))
+  sample="{ \"model\": { \"display_name\": \"Opus 4.8\" }, \"workspace\": { \"current_dir\": \"$HOME/dev/ccbar\" }, \"effort\": { \"level\": \"high\" }, \"context_window\": { \"used_percentage\": 42 }, \"rate_limits\": { \"five_hour\": { \"used_percentage\": 63, \"resets_at\": $five }, \"seven_day\": { \"used_percentage\": 88, \"resets_at\": $week } } }"
+
+  # Force all segments on and a sample label so previews show everything.
+  CCBAR_ORG="acme"
+  CCBAR_SHOW_EFFORT=1; CCBAR_SHOW_CTX=1; CCBAR_SHOW_5H=1; CCBAR_SHOW_7D=1
+
+  printf "%b\n\n" "${bold}ccbar gallery${RESET} — preset looks you can apply"
+
+  local i=0 name theme width filled empty
+  while IFS='|' read -r name theme width filled empty; do
+    [ -z "$name" ] && continue
+    i=$(( i + 1 ))
+    CCBAR_THEME="$theme"; CCBAR_BAR_WIDTH="$width"
+    CCBAR_BAR_FILLED="$filled"; CCBAR_BAR_EMPTY="$empty"
+    apply_theme "$theme"
+    printf "  %d) %s\n" "$i" "$name"
+    _render_status "$sample" | sed 's/^/     /'
+    printf "\n"
+  done <<EOF
+$CCBAR_PRESETS
+EOF
+
+  printf "%b\n" "${dim}Run \`ccbar config\` for full control (org label, segments, custom bars).${RESET}"
+
+  # Browse + apply — only when a real terminal is available.
+  if tty_ok; then
+    local choice
+    choice=$(ask "Apply which? [1-$i, Enter to skip]" "")
+    case "$choice" in
+      "")          _say "Skipped — nothing changed." ;;
+      *[!0-9]*)    _say "Not a number — skipped." ;;
+      *)
+        if [ "$choice" -ge 1 ] && [ "$choice" -le "$i" ]; then
+          _apply_preset "$choice"
+        else
+          _say "No preset $choice — skipped."
+        fi
+        ;;
+    esac
+  fi
+}
+
+# _apply_preset N — write the N-th preset's theme/bars to the config, keeping
+# the user's existing org label and segment toggles.
+_apply_preset() {
+  local want="$1" i=0 name theme width filled empty
+  while IFS='|' read -r name theme width filled empty; do
+    [ -z "$name" ] && continue
+    i=$(( i + 1 ))
+    [ "$i" = "$want" ] || continue
+
+    # Drop the preview-only overrides, then load the user's real settings.
+    unset CCBAR_ORG CCBAR_SHOW_EFFORT CCBAR_SHOW_CTX CCBAR_SHOW_5H CCBAR_SHOW_7D
+    load_config
+    CCBAR_THEME="$theme"; CCBAR_BAR_WIDTH="$width"
+    CCBAR_BAR_FILLED="$filled"; CCBAR_BAR_EMPTY="$empty"
+
+    mkdir -p "$CONFIG_DIR"
+    cat >"$CONFIG_FILE" <<CFG
+# ccbar config — updated by \`ccbar gallery\`
+# Edit by hand or re-run \`ccbar config\` at any time.
+CCBAR_ORG="$CCBAR_ORG"
+CCBAR_THEME="$CCBAR_THEME"
+CCBAR_BAR_WIDTH="$CCBAR_BAR_WIDTH"
+CCBAR_BAR_FILLED="$CCBAR_BAR_FILLED"
+CCBAR_BAR_EMPTY="$CCBAR_BAR_EMPTY"
+CCBAR_SHOW_EFFORT="$CCBAR_SHOW_EFFORT"
+CCBAR_SHOW_CTX="$CCBAR_SHOW_CTX"
+CCBAR_SHOW_5H="$CCBAR_SHOW_5H"
+CCBAR_SHOW_7D="$CCBAR_SHOW_7D"
+CFG
+    _say "Applied \"$name\" → $CONFIG_FILE"
+    _say "Start a new Claude Code session (or restart it) to see it."
+    return 0
+  done <<EOF
+$CCBAR_PRESETS
 EOF
 }
 
@@ -445,6 +556,7 @@ Usage:
   ccbar render       Read Claude Code's status JSON on stdin and print the bar.
                      (This is what Claude Code itself calls.)
   ccbar config       Run the interactive setup wizard.
+  ccbar gallery      Browse preset looks and optionally apply one.
   ccbar demo         Preview the status line with sample data.
   ccbar uninstall    Remove ccbar's wiring from Claude Code settings.
   ccbar version      Print the version.
@@ -462,6 +574,7 @@ main() {
   case "${1:-}" in
     render)                shift; cmd_render "$@" ;;
     config|configure|init) cmd_config ;;
+    gallery|presets)       cmd_gallery ;;
     demo)                  cmd_demo ;;
     uninstall)             cmd_uninstall ;;
     version|--version|-v)  cmd_version ;;

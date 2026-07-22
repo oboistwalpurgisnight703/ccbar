@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-07-22
+
+### Added
+- `ccbar gallery` — browse a set of curated presets (theme + bar style + width)
+  rendered with sample data, then optionally apply one. Applying keeps your
+  existing org label and segment toggles; only the theme and bar style change.
+  Runs browse-only when piped or without a terminal. The wizard and all other
+  commands are unchanged.
+
 ## [0.1.0] - 2026-07-22
 
 Initial release.
