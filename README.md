@@ -34,13 +34,13 @@ Bars turn 🟢 green → 🟡 yellow → 🔴 red as they fill, so you can see a
 ## Install
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/lakpriya1s/ccbar/main/install.sh | bash
+npx ccbar-cli
 ```
 
-Or with npm:
+Or with curl:
 
 ```sh
-npx ccbar-cli
+curl -fsSL https://raw.githubusercontent.com/lakpriya1s/ccbar/main/install.sh | bash
 ```
 
 The installer will:

@@ -34,13 +34,13 @@
 ## インストール
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/lakpriya1s/ccbar/main/install.sh | bash
+npx ccbar-cli
 ```
 
-または npm で:
+または curl で:
 
 ```sh
-npx ccbar-cli
+curl -fsSL https://raw.githubusercontent.com/lakpriya1s/ccbar/main/install.sh | bash
 ```
 
 インストーラーは次の処理を行います。

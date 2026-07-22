@@ -34,13 +34,13 @@
 ## 安装
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/lakpriya1s/ccbar/main/install.sh | bash
+npx ccbar-cli
 ```
 
-或使用 npm：
+或使用 curl：
 
 ```sh
-npx ccbar-cli
+curl -fsSL https://raw.githubusercontent.com/lakpriya1s/ccbar/main/install.sh | bash
 ```
 
 安装程序会：

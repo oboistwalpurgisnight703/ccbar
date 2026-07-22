@@ -34,13 +34,13 @@
 ## 설치
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/lakpriya1s/ccbar/main/install.sh | bash
+npx ccbar-cli
 ```
 
-또는 npm으로:
+또는 curl로:
 
 ```sh
-npx ccbar-cli
+curl -fsSL https://raw.githubusercontent.com/lakpriya1s/ccbar/main/install.sh | bash
 ```
 
 설치 프로그램이 하는 일:

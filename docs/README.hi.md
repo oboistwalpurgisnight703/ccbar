@@ -34,13 +34,13 @@
 ## इंस्टॉल करें
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/lakpriya1s/ccbar/main/install.sh | bash
+npx ccbar-cli
 ```
 
-या npm के साथ:
+या curl के साथ:
 
 ```sh
-npx ccbar-cli
+curl -fsSL https://raw.githubusercontent.com/lakpriya1s/ccbar/main/install.sh | bash
 ```
 
 इंस्टॉलर निम्नलिखित करेगा:

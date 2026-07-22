@@ -34,13 +34,13 @@
 ## ස්ථාපනය
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/lakpriya1s/ccbar/main/install.sh | bash
+npx ccbar-cli
 ```
 
-හෝ npm සමඟ:
+හෝ curl සමඟ:
 
 ```sh
-npx ccbar-cli
+curl -fsSL https://raw.githubusercontent.com/lakpriya1s/ccbar/main/install.sh | bash
 ```
 
 ස්ථාපකය මඟින්:
