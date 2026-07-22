@@ -18,7 +18,7 @@
 # Home: https://github.com/lakpriya1s/ccbar
 # License: MIT
 
-CCBAR_VERSION="0.2.0"
+CCBAR_VERSION="0.2.1"
 
 # ----------------------------------------------------------------------------
 # Paths
@@ -244,15 +244,17 @@ _render_status() {
 # ----------------------------------------------------------------------------
 # demo — preview with realistic sample data
 # ----------------------------------------------------------------------------
-cmd_demo() {
+
+# _demo_json — emit realistic sample status JSON (workspace shows "my-project").
+_demo_json() {
   local now five week
   now=$(date +%s)
   five=$(( now + 2 * 3600 + 15 * 60 ))
   week=$(( now + 3 * 86400 + 4 * 3600 ))
-  cmd_render <<EOF
+  cat <<EOF
 {
   "model": { "display_name": "Opus 4.8" },
-  "workspace": { "current_dir": "$HOME/dev/ccbar" },
+  "workspace": { "current_dir": "/Users/you/dev/my-project" },
   "effort": { "level": "high" },
   "context_window": { "used_percentage": 42 },
   "rate_limits": {
@@ -261,6 +263,19 @@ cmd_demo() {
   }
 }
 EOF
+}
+
+# cmd_demo — show how ccbar actually appears beneath the Claude Code prompt,
+# by framing a sample prompt and rendering the status line under it.
+cmd_demo() {
+  local dim='\033[2m' accent='\033[1;36m' reset='\033[0m'
+  local rule='────────────────────────────────────────────────────────────'
+  printf "\n%bHow ccbar looks beneath your Claude Code prompt:%b\n\n" "$dim" "$reset"
+  printf "%b%s%b\n" "$dim" "$rule" "$reset"
+  printf " %b❯%b add a dark-mode toggle to the settings page\n" "$accent" "$reset"
+  printf "%b%s%b\n" "$dim" "$rule" "$reset"
+  _demo_json | cmd_render
+  printf "\n"
 }
 
 # ----------------------------------------------------------------------------
@@ -283,10 +298,9 @@ cmd_gallery() {
 
   local bold='\033[1m' dim='\033[2m'
 
-  # Sample data used for every preview.
-  local now five week sample
-  now=$(date +%s); five=$(( now + 2 * 3600 + 15 * 60 )); week=$(( now + 3 * 86400 + 4 * 3600 ))
-  sample="{ \"model\": { \"display_name\": \"Opus 4.8\" }, \"workspace\": { \"current_dir\": \"$HOME/dev/ccbar\" }, \"effort\": { \"level\": \"high\" }, \"context_window\": { \"used_percentage\": 42 }, \"rate_limits\": { \"five_hour\": { \"used_percentage\": 63, \"resets_at\": $five }, \"seven_day\": { \"used_percentage\": 88, \"resets_at\": $week } } }"
+  # Sample data used for every preview (workspace shows "my-project").
+  local sample
+  sample=$(_demo_json)
 
   # Force all segments on and a sample label so previews show everything.
   CCBAR_ORG="Acme"
@@ -502,8 +516,8 @@ EOF
   _say "Saved to \033[1m$CONFIG_FILE\033[0m"
   _say ""
   _say "Preview:"
-  # Render preview to the terminal.
-  cmd_demo >"$TTY_OUT"
+  # Render the bare status line (unframed) to the terminal.
+  _demo_json | cmd_render >"$TTY_OUT"
   _say ""
 
   # Close the terminal fd.

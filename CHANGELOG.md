@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.2.1] - 2026-07-22
+
+### Changed
+- `ccbar demo` now frames the status line beneath a sample Claude Code prompt,
+  so you can see how it actually appears in a session. The sample workspace
+  shows `my-project`. The wizard's preview and the gallery are unaffected in
+  behavior (the wizard preview stays a bare status line).
+
 ## [0.2.0] - 2026-07-22
 
 ### Added
