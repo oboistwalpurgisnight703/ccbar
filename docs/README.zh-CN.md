@@ -8,6 +8,7 @@
 **为 [Claude Code](https://claude.com/claude-code) 打造的可配置状态栏**<br>
 一眼掌握你的模型、投入级别、工作区以及实时用量。
 
+[![npm](https://img.shields.io/npm/v/ccbar-cli?color=cb3837&logo=npm&logoColor=white)](https://www.npmjs.com/package/ccbar-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
 [![Shell: bash](https://img.shields.io/badge/shell-bash-89e051.svg)](#requirements)
 
@@ -34,6 +35,12 @@
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/lakpriya1s/ccbar/main/install.sh | bash
+```
+
+或使用 npm：
+
+```sh
+npx ccbar-cli
 ```
 
 安装程序会：

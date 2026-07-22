@@ -8,6 +8,7 @@
 **Una línea de estado configurable para [Claude Code](https://claude.com/claude-code)**<br>
 Consulta tu modelo, nivel de esfuerzo, espacio de trabajo y uso en tiempo real de un vistazo.
 
+[![npm](https://img.shields.io/npm/v/ccbar-cli?color=cb3837&logo=npm&logoColor=white)](https://www.npmjs.com/package/ccbar-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
 [![Shell: bash](https://img.shields.io/badge/shell-bash-89e051.svg)](#requirements)
 
@@ -34,6 +35,12 @@ Las barras cambian de 🟢 verde → 🟡 amarillo → 🔴 rojo a medida que se
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/lakpriya1s/ccbar/main/install.sh | bash
+```
+
+O con npm:
+
+```sh
+npx ccbar-cli
 ```
 
 El instalador hará lo siguiente:

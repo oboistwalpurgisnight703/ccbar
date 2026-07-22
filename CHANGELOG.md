@@ -5,6 +5,12 @@ All notable changes to this project are documented here. This project adheres to
 
 ## [0.2.1] - 2026-07-22
 
+### Added
+- npm distribution: `npx ccbar-cli` installs ccbar and runs the setup wizard,
+  and forwards subcommands (`npx ccbar-cli gallery`, etc.). A small Node wrapper
+  (`cli.js`) copies the bundled bash script to `~/.local/bin` and wires
+  `~/.claude/settings.json` — no `jq` needed for the settings merge.
+
 ### Changed
 - `ccbar demo` now frames the status line beneath a sample Claude Code prompt,
   so you can see how it actually appears in a session. The sample workspace

@@ -8,6 +8,7 @@
 **[Claude Code](https://claude.com/claude-code) 向けの設定可能なステータスライン**<br>
 モデル、努力レベル、ワークスペース、リアルタイムの使用状況をひと目で確認できます。
 
+[![npm](https://img.shields.io/npm/v/ccbar-cli?color=cb3837&logo=npm&logoColor=white)](https://www.npmjs.com/package/ccbar-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
 [![Shell: bash](https://img.shields.io/badge/shell-bash-89e051.svg)](#requirements)
 
@@ -34,6 +35,12 @@
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/lakpriya1s/ccbar/main/install.sh | bash
+```
+
+または npm で:
+
+```sh
+npx ccbar-cli
 ```
 
 インストーラーは次の処理を行います。

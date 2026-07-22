@@ -8,6 +8,7 @@
 **[Claude Code](https://claude.com/claude-code) के लिए एक कॉन्फ़िगर करने योग्य स्टेटस लाइन**<br>
 अपना मॉडल, एफर्ट लेवल, वर्कस्पेस और लाइव उपयोग एक नज़र में देखें।
 
+[![npm](https://img.shields.io/npm/v/ccbar-cli?color=cb3837&logo=npm&logoColor=white)](https://www.npmjs.com/package/ccbar-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
 [![Shell: bash](https://img.shields.io/badge/shell-bash-89e051.svg)](#requirements)
 
@@ -34,6 +35,12 @@
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/lakpriya1s/ccbar/main/install.sh | bash
+```
+
+या npm के साथ:
+
+```sh
+npx ccbar-cli
 ```
 
 इंस्टॉलर निम्नलिखित करेगा:

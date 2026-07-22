@@ -8,6 +8,7 @@
 **[Claude Code](https://claude.com/claude-code)를 위한 설정 가능한 상태 표시줄**<br>
 모델, 노력 수준, 워크스페이스, 실시간 사용량을 한눈에 확인하세요.
 
+[![npm](https://img.shields.io/npm/v/ccbar-cli?color=cb3837&logo=npm&logoColor=white)](https://www.npmjs.com/package/ccbar-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
 [![Shell: bash](https://img.shields.io/badge/shell-bash-89e051.svg)](#requirements)
 
@@ -34,6 +35,12 @@
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/lakpriya1s/ccbar/main/install.sh | bash
+```
+
+또는 npm으로:
+
+```sh
+npx ccbar-cli
 ```
 
 설치 프로그램이 하는 일:

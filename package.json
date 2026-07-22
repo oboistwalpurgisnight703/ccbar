@@ -1,0 +1,37 @@
+{
+  "name": "ccbar-cli",
+  "version": "0.2.1",
+  "description": "A configurable status line for Claude Code — model, effort, workspace, and live context/rate-limit usage bars.",
+  "bin": {
+    "ccbar": "cli.js"
+  },
+  "files": [
+    "cli.js",
+    "bin/ccbar"
+  ],
+  "engines": {
+    "node": ">=14"
+  },
+  "os": [
+    "darwin",
+    "linux"
+  ],
+  "keywords": [
+    "claude-code",
+    "statusline",
+    "status-line",
+    "cli",
+    "terminal",
+    "anthropic"
+  ],
+  "homepage": "https://github.com/lakpriya1s/ccbar#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lakpriya1s/ccbar.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lakpriya1s/ccbar/issues"
+  },
+  "author": "Lakpriya Senevirathna",
+  "license": "MIT"
+}
