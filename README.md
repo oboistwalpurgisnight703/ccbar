@@ -1,9 +1,19 @@
-# ccbar
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/ccbar-logo-horizontal-dark.svg">
+    <img src="./assets/ccbar-logo-horizontal.svg" alt="ccbar — Claude Code status line" width="640">
+  </picture>
+</p>
 
-**A configurable status line for [Claude Code](https://claude.com/claude-code)** — see your model, effort level, workspace, and live usage at a glance.
+<p align="center">
+  <b>A configurable status line for <a href="https://claude.com/claude-code">Claude Code</a></b><br>
+  See your model, effort level, workspace, and live usage at a glance.
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![Shell](https://img.shields.io/badge/shell-bash-89e051.svg)](#requirements)
+<p align="center">
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  <a href="#requirements"><img src="https://img.shields.io/badge/shell-bash-89e051.svg" alt="Shell: bash"></a>
+</p>
 
 `ccbar` renders a compact two-line status line under your Claude Code prompt:
 

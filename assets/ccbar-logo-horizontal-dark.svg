@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="560" viewBox="0 0 1800 560">
+  <g transform="translate(40 40) scale(0.46875)">
+    <rect width="1024" height="1024" rx="224" fill="#171717"/>
+    <rect x="128" y="150" width="768" height="724" rx="132" fill="#222222"/>
+    <circle cx="230" cy="246" r="22" fill="#F2785C"/>
+    <circle cx="296" cy="246" r="22" fill="#F2C96D"/>
+    <circle cx="362" cy="246" r="22" fill="#7ECF9A"/>
+    <path d="M230 416 L310 484 L230 552" fill="none" stroke="#F2785C" stroke-width="46"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M500 430 C434 430 392 477 392 540 C392 603 434 650 500 650"
+          fill="none" stroke="#F4EEE6" stroke-width="52" stroke-linecap="round"/>
+    <path d="M692 430 C626 430 584 477 584 540 C584 603 626 650 692 650"
+          fill="none" stroke="#F4EEE6" stroke-width="52" stroke-linecap="round"/>
+    <rect x="228" y="716" width="132" height="34" rx="17" fill="#7ECF9A"/>
+    <rect x="380" y="716" width="132" height="34" rx="17" fill="#7ECF9A"/>
+    <rect x="532" y="716" width="132" height="34" rx="17" fill="#F2C96D"/>
+    <rect x="684" y="716" width="112" height="34" rx="17" fill="#E76F6F"/>
+  </g>
+
+  <text x="610" y="330" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+        font-size="236" font-weight="700" letter-spacing="-14" fill="#F4EEE6">cc</text>
+  <text x="916" y="330" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+        font-size="236" font-weight="700" letter-spacing="-14" fill="#F2785C">bar</text>
+  <text x="624" y="412" font-family="Inter, Arial, sans-serif"
+        font-size="42" font-weight="500" letter-spacing="5" fill="#A8A29E">CLAUDE CODE STATUS LINE</text>
+</svg>
