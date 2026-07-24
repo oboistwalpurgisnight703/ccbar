@@ -13,6 +13,7 @@
 #   ccbar history       Show usage trends from recorded snapshots.
 #   ccbar config        Run the interactive setup wizard.
 #   ccbar demo          Preview with sample data (also: demo stats, demo history).
+#   ccbar install       Copy ccbar to ~/.local/bin and wire it into Claude Code.
 #   ccbar uninstall     Remove ccbar's wiring from Claude Code settings.
 #   ccbar version       Print the version.
 #   ccbar help          Show this help.
@@ -1032,6 +1033,56 @@ EOF
 }
 
 # ----------------------------------------------------------------------------
+# install — copy this script to ~/.local/bin and wire it into Claude Code
+# settings as the status line. Non-interactive; safe to re-run. This is what
+# the Claude Code plugin's /ccbar-setup command invokes.
+# ----------------------------------------------------------------------------
+cmd_install() {
+  if ! command -v jq >/dev/null 2>&1; then
+    _err "jq is required to install ccbar — see the README for install instructions"
+    return 1
+  fi
+
+  # Resolve this script's own absolute path (lazily — never on the render path).
+  local self
+  self="${BASH_SOURCE[0]:-$0}"
+  case "$self" in
+    /*) : ;;
+    *)  self="$(cd "$(dirname "$self")" && pwd)/$(basename "$self")" ;;
+  esac
+
+  # 1. Copy the script into ~/.local/bin (skip if we're already it).
+  mkdir -p "$(dirname "$INSTALL_BIN")"
+  if [ "$self" != "$INSTALL_BIN" ]; then
+    cp "$self" "$INSTALL_BIN" || { _err "failed to copy ccbar to $INSTALL_BIN"; return 1; }
+  fi
+  chmod +x "$INSTALL_BIN"
+  printf "installed %s\n" "$INSTALL_BIN"
+
+  # 2. Wire into Claude Code settings — merge, never clobber, back up first.
+  mkdir -p "$(dirname "$SETTINGS_FILE")"
+  [ -f "$SETTINGS_FILE" ] || printf '{}\n' >"$SETTINGS_FILE"
+  if ! jq empty "$SETTINGS_FILE" >/dev/null 2>&1; then
+    _err "$SETTINGS_FILE is not valid JSON — left untouched. Fix it and re-run."
+    return 1
+  fi
+  cp "$SETTINGS_FILE" "${SETTINGS_FILE}.bak"
+  local tmp="${SETTINGS_FILE}.ccbar.tmp"
+  if jq --arg cmd "$INSTALL_BIN render" \
+        '.statusLine = {type: "command", command: $cmd, padding: 0}' \
+        "$SETTINGS_FILE" >"$tmp" 2>/dev/null; then
+    mv "$tmp" "$SETTINGS_FILE"
+    printf "configured status line in %s (backup at %s.bak)\n" "$SETTINGS_FILE" "$SETTINGS_FILE"
+  else
+    rm -f "$tmp"
+    _err "failed to edit $SETTINGS_FILE — left unchanged"
+    return 1
+  fi
+
+  printf "Done. Run 'ccbar config' to customize, then start a new Claude Code session.\n"
+}
+
+# ----------------------------------------------------------------------------
 # uninstall — unwire from Claude Code settings; optionally remove files.
 # ----------------------------------------------------------------------------
 cmd_uninstall() {
@@ -1081,6 +1132,7 @@ Usage:
   ccbar gallery      Browse preset looks and optionally apply one.
   ccbar demo         Preview the status line with sample data.
                      (Also: `ccbar demo stats` and `ccbar demo history`.)
+  ccbar install      Copy ccbar to ~/.local/bin and wire it into Claude Code.
   ccbar uninstall    Remove ccbar's wiring from Claude Code settings.
   ccbar version      Print the version.
   ccbar help         Show this help.
@@ -1101,6 +1153,7 @@ main() {
     config|configure|init) cmd_config ;;
     gallery|presets)       cmd_gallery ;;
     demo)                  shift; cmd_demo "$@" ;;
+    install)               cmd_install ;;
     uninstall)             cmd_uninstall ;;
     version|--version|-v)  cmd_version ;;
     help|--help|-h)        cmd_help ;;

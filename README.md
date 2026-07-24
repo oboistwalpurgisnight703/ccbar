@@ -60,6 +60,25 @@ Then **start a new Claude Code session** (or restart it) to see your status line
 
 > Prefer not to pipe to `bash`? See [Manual install](#manual-install).
 
+### As a Claude Code plugin
+
+ccbar is also available as a [Claude Code plugin](https://docs.claude.com/en/docs/claude-code/plugins). Inside Claude Code:
+
+```text
+/plugin marketplace add lakpriya1s/ccbar
+/plugin install ccbar@ccbar
+```
+
+Then run the setup command to wire ccbar into your status line:
+
+```text
+/ccbar-setup
+```
+
+That copies the bundled `ccbar` script to `~/.local/bin/ccbar` and adds the `statusLine` entry to `~/.claude/settings.json` (merging, never clobbering, with a `.bak` backup). Run `ccbar config` to customize, then start a new session.
+
+> Claude Code plugins can't register a status line on their own, so `/ccbar-setup` performs that one-time wiring for you.
+
 ## Requirements
 
 - **bash** (macOS's built-in 3.2 is fine) and coreutils `date`
@@ -141,6 +160,12 @@ Read Claude Code's status JSON on stdin and print the bar (this is what Claude C
 
 ```sh
 ccbar render
+```
+
+Copy ccbar to `~/.local/bin` and wire it into Claude Code settings (this is what the `/ccbar-setup` plugin command runs).
+
+```sh
+ccbar install
 ```
 
 Remove ccbar's wiring from Claude Code settings.

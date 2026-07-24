@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "ccbar",
+  "displayName": "ccbar",
+  "version": "0.3.0",
+  "description": "A configurable status line for Claude Code — model, effort, workspace, and live context/rate-limit usage bars.",
+  "author": {
+    "name": "Lakpriya Senevirathna",
+    "url": "https://github.com/lakpriya1s"
+  },
+  "homepage": "https://github.com/lakpriya1s/ccbar#readme",
+  "repository": "https://github.com/lakpriya1s/ccbar",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "statusline",
+    "status-line",
+    "cli",
+    "terminal",
+    "anthropic"
+  ],
+  "commands": ["./commands/"]
+}
