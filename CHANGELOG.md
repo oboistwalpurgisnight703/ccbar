@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Claude Code plugin** — ccbar can now be installed as a Claude Code plugin:
+  `/plugin marketplace add lakpriya1s/ccbar`, then `/plugin install ccbar@ccbar`.
+  Adds `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, and a
+  `/ccbar-setup` slash command that wires up the status line.
+- **`ccbar install`** — copies ccbar to `~/.local/bin` and wires it into
+  `~/.claude/settings.json` (merging, never clobbering, with a `.bak` backup).
+  Symmetric with `ccbar uninstall`; this is what `/ccbar-setup` runs.
+
 ## [0.3.0] - 2026-07-24
 
 ### Added
