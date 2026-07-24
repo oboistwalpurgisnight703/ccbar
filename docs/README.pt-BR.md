@@ -24,10 +24,17 @@ O `ccbar` renderiza uma status line compacta de duas linhas logo abaixo do promp
   <img src="../assets/ccbar-preview.png" alt="ccbar status line preview" width="760">
 </p>
 
-- **Linha 1** — um selo opcional de organização/rótulo, o nome do modelo, o nível de esforço atual e o diretório do workspace.
+- **Linha 1** — um selo opcional de organização/rótulo, o nome do modelo, o nível de esforço atual, o diretório do workspace e (opcionalmente) o **custo da sessão** em andamento.
 - **Linha 2** — barras de uso coloridas para sua **janela de contexto**, o limite de taxa de **5 horas** e o limite de taxa de **7 dias**, cada uma com uma contagem regressiva até o momento em que é reiniciada.
 
 As barras mudam de 🟢 verde → 🟡 amarelo → 🔴 vermelho conforme se enchem, para que você veja num relance quanta folga ainda tem.
+
+Dois extras ajudam você a gerenciar suas janelas de limite de taxa:
+
+- **Janela ociosa de 5 horas** — antes de você enviar sua primeira mensagem, a janela de 5 horas ainda não começou, então o ccbar mostra `5h idle` para sinalizar que o relógio não está correndo. (O limite de 5 horas do Claude é uma janela deslizante ancorada na sua primeira mensagem — enviar um prompt rápido e descartável enquanto está ocioso inicia a janela mais cedo e encurta qualquer espera eventual.)
+- **Aviso de taxa de consumo** *(opcional)* — quando seu ritmo atual projeta esgotar um limite *antes* de ele ser reiniciado, o ccbar acrescenta uma estimativa `⚠ <time>` àquela barra. Desativado por padrão; ative-o no `ccbar config`.
+
+Além da status line, o ccbar oferece dois comandos de terminal: **[`ccbar stats`](#usage-insights)** para um painel de uso expandido e **[`ccbar history`](#usage-insights)** para tendências de uso dos últimos 7 dias.
 
 ---
 
@@ -83,6 +90,9 @@ Ele grava um arquivo simples e editável à mão em `~/.config/ccbar/config`:
 | `CCBAR_SHOW_CTX`    | `1`     | Exibe a barra da janela de contexto (`1`/`0`).                     |
 | `CCBAR_SHOW_5H`     | `1`     | Exibe a barra de uso de 5 horas (`1`/`0`).                         |
 | `CCBAR_SHOW_7D`     | `1`     | Exibe a barra de uso de 7 dias (`1`/`0`).                          |
+| `CCBAR_SHOW_COST`   | `0`     | Exibe o custo da sessão em andamento na linha 1 (`1`/`0`).         |
+| `CCBAR_SHOW_BURN`   | `0`     | Avisa (`⚠ <time>`) quando seu ritmo esgotará um limite mais cedo (`1`/`0`). |
+| `CCBAR_HISTORY`     | `1`     | Registra snapshots de uso para o `ccbar history` (`1`/`0`).        |
 
 Todo valor tem um padrão sensato, então uma configuração ausente ou parcial ainda renderiza normalmente.
 
@@ -96,6 +106,18 @@ Todo valor tem um padrão sensato, então uma configuração ausente ou parcial 
 
 ## Comandos
 
+Exibe um painel de uso expandido (veja [Insights de uso](#usage-insights)).
+
+```sh
+ccbar stats
+```
+
+Exibe tendências de uso dos últimos 7 dias (veja [Insights de uso](#usage-insights)).
+
+```sh
+ccbar history
+```
+
 Executa o assistente de configuração interativo.
 
 ```sh
@@ -108,10 +130,12 @@ Navegue pelas aparências predefinidas e, opcionalmente, aplique uma.
 ccbar gallery
 ```
 
-Pré-visualiza a status line com dados de exemplo.
+Pré-visualiza com dados de exemplo — a status line ou (com `stats`/`history`) qualquer um dos painéis de uso.
 
 ```sh
 ccbar demo
+ccbar demo stats
+ccbar demo history
 ```
 
 Lê o JSON de status do Claude Code no stdin e imprime a barra (é isto que o próprio Claude Code chama).
@@ -143,6 +167,49 @@ ccbar help
 > echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc   # ou ~/.bashrc
 > ```
 > A status line em si usa um caminho absoluto, então funciona independentemente do seu `PATH`.
+
+<a id="usage-insights"></a>
+## Insights de uso
+
+O ccbar **não faz chamadas de rede** e **não tem credenciais** — ele só vê o JSON que o Claude Code envia ao `ccbar render`. Para tornar esses dados úteis fora da status line, o `render` guarda em cache o payload mais recente (e registra um pequeno histórico rotativo), que dois comandos leem de volta. Experimente-os com dados de exemplo via `ccbar demo stats` e `ccbar demo history`.
+
+### `ccbar stats`
+
+Um painel de uso expandido, sob demanda — modelo, sessão (5h), semanal (7d), contexto, custo, contagens regressivas de reinício e seu ritmo atual:
+
+```
+ccbar — usage
+
+  Model     Opus 4.8 (high)
+  Session   ██████░░░░ 63%   resets in 2h 15m
+            hits limit in ~1h 36m
+  Weekly    ████████░░ 88%   resets in 3d 4h
+  Context   ████░░░░░░ 42%   84k / 200k
+  Cost      $0.42
+  Updated   12s ago
+```
+
+Ele lê o payload mais recente que o Claude Code entregou ao `ccbar render` (capturado a cada redesenho e carimbado com há quanto tempo). Redirecione um JSON novo — `… | ccbar stats` — para sobrescrevê-lo.
+
+### `ccbar history`
+
+Tendências de uso nos últimos 7 dias — uma sparkline dos picos diários de 5 horas, o uso semanal atual, uma tabela por dia (pico de 5h/7d %, custo estimado) e sua taxa de consumo medida:
+
+```
+ccbar — history (last 7 days)
+
+  5h peak   ▃▆▇▄▅▅▅   now 63%
+  7d        ████████░░ 86%
+
+  Date      5h peak 7d peak     ~cost
+  Jul 24        63%     86%     $2.64
+  Jul 23        70%     85%     $3.44
+  Jul 22        63%     84%     $3.46
+
+  Burn (last hr)  ~22%/h → hits 5h limit in ~1h 40m
+```
+
+O `render` registra um snapshot limitado (no máximo um por minuto) em `${XDG_STATE_HOME:-~/.local/state}/ccbar/history.tsv`, e o `history` o resume. Ele só reflete o tempo em que o Claude Code esteve aberto, e o custo diário é uma estimativa (somada por sessão). Defina `CCBAR_HISTORY=0` para desativar o registro por completo; exclua o arquivo para reiniciar.
 
 ## Como funciona
 

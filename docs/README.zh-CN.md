@@ -24,10 +24,17 @@
   <img src="../assets/ccbar-preview.png" alt="ccbar status line preview" width="760">
 </p>
 
-- **第 1 行** — 可选的组织/标签徽标、模型名称、当前投入级别，以及工作区目录。
+- **第 1 行** — 可选的组织/标签徽标、模型名称、当前投入级别、工作区目录，以及（可选的）实时**会话花费**。
 - **第 2 行** — 分别针对你的**上下文窗口**、**5 小时**速率限制和**7 天**速率限制的彩色用量条，每条都带有距离重置的倒计时。
 
 用量条会随着填充程度由 🟢 绿 → 🟡 黄 → 🔴 红 变化，让你一眼就能看出还剩下多少余量。
+
+还有两个附加功能，帮助你管理速率限制窗口：
+
+- **5 小时空闲窗口** — 在你发送第一条消息之前，5 小时窗口尚未开始，因此 ccbar 会显示 `5h idle`，提示计时器还没有开始运行。（Claude 的 5 小时限制是一个以你第一条消息为锚点的滚动窗口 — 在空闲时随手发送一条无关紧要的消息会提前启动窗口，从而缩短最终可能出现的等待时间。）
+- **消耗速率警告** *(需手动开启)* — 当你当前的使用节奏预计会在某个限制*重置之前*就将其耗尽时，ccbar 会在该用量条后附加一个 `⚠ <time>` 估算。默认关闭；可在 `ccbar config` 中启用。
+
+除了状态栏之外，ccbar 还为你提供了两个终端命令：**[`ccbar stats`](#usage-insights)** 可显示一个展开的用量面板，**[`ccbar history`](#usage-insights)** 可显示过去 7 天的用量趋势。
 
 ---
 
@@ -83,6 +90,9 @@ ccbar config
 | `CCBAR_SHOW_CTX`    | `1`     | 显示上下文窗口用量条（`1`/`0`）。                             |
 | `CCBAR_SHOW_5H`     | `1`     | 显示 5 小时用量条（`1`/`0`）。                              |
 | `CCBAR_SHOW_7D`     | `1`     | 显示 7 天用量条（`1`/`0`）。                               |
+| `CCBAR_SHOW_COST`   | `0`     | 在第 1 行显示实时会话花费（`1`/`0`）。                 |
+| `CCBAR_SHOW_BURN`   | `0`     | 当你的使用节奏会提前耗尽某个限制时发出警告（`⚠ <time>`）（`1`/`0`）。 |
+| `CCBAR_HISTORY`     | `1`     | 记录用量快照供 `ccbar history` 使用（`1`/`0`）。              |
 
 每个值都有合理的默认设置，因此即使配置缺失或不完整，状态栏依然能正常渲染。
 
@@ -96,6 +106,18 @@ ccbar config
 
 ## 命令
 
+显示一个展开的用量面板（参见[使用洞察](#usage-insights)）。
+
+```sh
+ccbar stats
+```
+
+显示过去 7 天的用量趋势（参见[使用洞察](#usage-insights)）。
+
+```sh
+ccbar history
+```
+
 运行交互式设置向导。
 
 ```sh
@@ -108,10 +130,12 @@ ccbar config
 ccbar gallery
 ```
 
-用示例数据预览状态栏。
+用示例数据预览 — 状态栏，或（配合 `stats`/`history`）任一用量面板。
 
 ```sh
 ccbar demo
+ccbar demo stats
+ccbar demo history
 ```
 
 从标准输入读取 Claude Code 的状态 JSON 并打印状态栏 （这正是 Claude Code 本身所调用的命令）。
@@ -143,6 +167,49 @@ ccbar help
 > echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc   # 或 ~/.bashrc
 > ```
 > 状态栏本身使用的是绝对路径，因此无论你的 `PATH` 如何设置都能正常工作。
+
+<a id="usage-insights"></a>
+## 使用洞察
+
+ccbar **不发起任何网络请求**，也**没有任何凭据** — 它只能看到 Claude Code 通过管道传给 `ccbar render` 的 JSON。为了让这些数据在状态栏之外也能派上用场，`render` 会缓存最新的负载（并记录一小段滚动历史），供两个命令读取。可通过 `ccbar demo stats` 和 `ccbar demo history` 用示例数据试用它们。
+
+### `ccbar stats`
+
+一个按需展开的用量面板 — 模型、会话（5h）、每周（7d）、上下文、花费、重置倒计时以及你当前的使用节奏：
+
+```
+ccbar — usage
+
+  Model     Opus 4.8 (high)
+  Session   ██████░░░░ 63%   resets in 2h 15m
+            hits limit in ~1h 36m
+  Weekly    ████████░░ 88%   resets in 3d 4h
+  Context   ████░░░░░░ 42%   84k / 200k
+  Cost      $0.42
+  Updated   12s ago
+```
+
+它会读取 Claude Code 最近一次传给 `ccbar render` 的负载（在每次重绘时捕获，并标记了距今多久）。通过管道传入新的 JSON（`… | ccbar stats`）即可覆盖它。
+
+### `ccbar history`
+
+过去 7 天的用量趋势 — 每日 5 小时峰值的迷你折线图、当前每周用量、逐日表格（5h/7d 峰值百分比、估算花费），以及你实测的消耗速率：
+
+```
+ccbar — history (last 7 days)
+
+  5h peak   ▃▆▇▄▅▅▅   now 63%
+  7d        ████████░░ 86%
+
+  Date      5h peak 7d peak     ~cost
+  Jul 24        63%     86%     $2.64
+  Jul 23        70%     85%     $3.44
+  Jul 22        63%     84%     $3.46
+
+  Burn (last hr)  ~22%/h → hits 5h limit in ~1h 40m
+```
+
+`render` 会以受限频率（最多每分钟一次）将快照记录到 `${XDG_STATE_HOME:-~/.local/state}/ccbar/history.tsv`，而 `history` 会对其进行汇总。它只反映 Claude Code 处于打开状态的时间，且每日花费是一个估算值（按会话逐一累加）。设置 `CCBAR_HISTORY=0` 可完全禁用记录；删除该文件即可重置。
 
 ## 工作原理
 

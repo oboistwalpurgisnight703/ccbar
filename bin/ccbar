@@ -9,8 +9,10 @@
 #
 # Usage:
 #   ccbar render        Read Claude Code's status JSON on stdin and print the bar.
+#   ccbar stats         Show an expanded usage panel from the latest render.
+#   ccbar history       Show usage trends from recorded snapshots.
 #   ccbar config        Run the interactive setup wizard.
-#   ccbar demo          Preview the status line with sample data.
+#   ccbar demo          Preview with sample data (also: demo stats, demo history).
 #   ccbar uninstall     Remove ccbar's wiring from Claude Code settings.
 #   ccbar version       Print the version.
 #   ccbar help          Show this help.
@@ -18,13 +20,17 @@
 # Home: https://github.com/lakpriya1s/ccbar
 # License: MIT
 
-CCBAR_VERSION="0.2.1"
+CCBAR_VERSION="0.3.0"
 
 # ----------------------------------------------------------------------------
 # Paths
 # ----------------------------------------------------------------------------
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/ccbar"
 CONFIG_FILE="$CONFIG_DIR/config"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ccbar"
+CACHE_FILE="$CACHE_DIR/last.json"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/ccbar"
+HISTORY_FILE="$STATE_DIR/history.tsv"
 SETTINGS_FILE="$HOME/.claude/settings.json"
 INSTALL_BIN="$HOME/.local/bin/ccbar"
 
@@ -48,6 +54,9 @@ load_config() {
   CCBAR_SHOW_CTX="${CCBAR_SHOW_CTX:-1}"
   CCBAR_SHOW_5H="${CCBAR_SHOW_5H:-1}"
   CCBAR_SHOW_7D="${CCBAR_SHOW_7D:-1}"
+  CCBAR_SHOW_COST="${CCBAR_SHOW_COST:-0}"
+  CCBAR_SHOW_BURN="${CCBAR_SHOW_BURN:-0}"
+  CCBAR_HISTORY="${CCBAR_HISTORY:-1}"
 }
 
 # ----------------------------------------------------------------------------
@@ -147,6 +156,44 @@ render_reset() {
   fi
 }
 
+# fmt_dur SECS — humanize a positive duration as "Xd Yh" / "Xh Ym" / "Xm".
+fmt_dur() {
+  local diff="$1"
+  [ "$diff" -le 0 ] 2>/dev/null && { printf "0m"; return; }
+  local days=$(( diff / 86400 ))
+  local hours=$(( (diff % 86400) / 3600 ))
+  local mins=$(( (diff % 3600) / 60 ))
+  if [ "$days" -gt 0 ]; then
+    printf "%dd %dh" "$days" "$hours"
+  elif [ "$hours" -gt 0 ]; then
+    printf "%dh %dm" "$hours" "$mins"
+  else
+    printf "%dm" "$mins"
+  fi
+}
+
+# render_burn PCT RESETS_AT WINDOW_SECS — if the current burn rate projects
+# hitting 100% before this window resets, print a " ⚠ <eta>" hint; otherwise
+# print nothing. The window start is inferred as (resets_at - WINDOW_SECS).
+render_burn() {
+  local pct_raw="$1" resets_at="$2" win="$3"
+  local pct now start elapsed ttr eta rem
+  pct=$(printf '%.0f' "$pct_raw" 2>/dev/null || echo 0)
+  [ "$pct" -le 0 ] && return
+  [ "$pct" -ge 100 ] && return
+  now=$(date +%s)
+  start=$(( resets_at - win ))
+  elapsed=$(( now - start ))
+  [ "$elapsed" -le 0 ] && return          # window just started — no rate yet
+  ttr=$(( resets_at - now ))
+  [ "$ttr" -le 0 ] && return
+  rem=$(( 100 - pct ))
+  eta=$(( rem * elapsed / pct ))          # seconds to reach 100% at current rate
+  if [ "$eta" -lt "$ttr" ]; then
+    printf " %b⚠ %s%b" "$BAR_HIGH" "$(fmt_dur "$eta")" "$RESET"
+  fi
+}
+
 # ----------------------------------------------------------------------------
 # render — the actual status line
 # ----------------------------------------------------------------------------
@@ -161,7 +208,54 @@ cmd_render() {
 
   local input
   input=$(cat)
+
+  # Cache the latest payload so `ccbar stats` can show it outside a pipe, and
+  # append a throttled snapshot to the history log for `ccbar history`.
+  if [ -n "$input" ]; then
+    local now_ts
+    now_ts=$(date +%s)
+    mkdir -p "$CACHE_DIR" 2>/dev/null && printf '%s' "$input" >"$CACHE_FILE" 2>/dev/null
+    [ "$CCBAR_HISTORY" = "1" ] && _history_log "$input" "$now_ts"
+  fi
+
   _render_status "$input"
+}
+
+# _history_log JSON NOW — append one snapshot row (tab-separated) to the history
+# log, at most once per 60s, and keep the file bounded. Columns:
+#   epoch  session_id  model  cost  ctx%  5h%  5h_reset  7d%  7d_reset
+_history_log() {
+  local input="$1" now="$2" row last_t n
+  row=$(printf '%s' "$input" | jq -r '[
+    (.session_id // "-"),
+    (.model.display_name // "-"),
+    (.cost.total_cost_usd // ""),
+    (.context_window.used_percentage // ""),
+    (.rate_limits.five_hour.used_percentage // ""),
+    (.rate_limits.five_hour.resets_at // ""),
+    (.rate_limits.seven_day.used_percentage // ""),
+    (.rate_limits.seven_day.resets_at // "")
+  ] | @tsv' 2>/dev/null) || return
+  [ -z "$row" ] && return
+
+  mkdir -p "$STATE_DIR" 2>/dev/null || return
+
+  # Throttle: at most one sample per minute.
+  if [ -f "$HISTORY_FILE" ]; then
+    last_t=$(tail -n1 "$HISTORY_FILE" 2>/dev/null | cut -f1)
+    case "$last_t" in ''|*[!0-9]*) last_t=0 ;; esac
+    [ $(( now - last_t )) -lt 60 ] && return
+  fi
+
+  printf '%s\t%s\n' "$now" "$row" >>"$HISTORY_FILE" 2>/dev/null || return
+
+  # Keep the log bounded (~20k samples); trim only when it grows past that.
+  n=$(wc -l <"$HISTORY_FILE" 2>/dev/null | tr -d ' ')
+  case "$n" in ''|*[!0-9]*) n=0 ;; esac
+  if [ "$n" -gt 22000 ]; then
+    tail -n 20000 "$HISTORY_FILE" >"$HISTORY_FILE.tmp" 2>/dev/null &&
+      mv "$HISTORY_FILE.tmp" "$HISTORY_FILE"
+  fi
 }
 
 # ----------------------------------------------------------------------------
@@ -177,12 +271,16 @@ _render_status() {
   dir=$(basename "$cwd" 2>/dev/null)
   effort=$(printf '%s' "$input" | jq -r '.effort.level // empty')
 
-  local ctx_pct five_pct five_reset week_pct week_reset
+  local ctx_pct five_pct five_reset week_pct week_reset cost has_rl
   ctx_pct=$(printf '%s' "$input" | jq -r '.context_window.used_percentage // empty')
   five_pct=$(printf '%s' "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
   five_reset=$(printf '%s' "$input" | jq -r '.rate_limits.five_hour.resets_at // empty')
   week_pct=$(printf '%s' "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
   week_reset=$(printf '%s' "$input" | jq -r '.rate_limits.seven_day.resets_at // empty')
+  cost=$(printf '%s' "$input" | jq -r '.cost.total_cost_usd // empty')
+  # Distinguishes "no active 5h window yet" (rate_limits present, five_hour
+  # absent) from "Claude Code sent no rate-limit data at all".
+  has_rl=$(printf '%s' "$input" | jq -r 'if .rate_limits then "1" else "" end')
 
   # ---- line 1: model [effort] -> dir, with optional org badge ----
   local inner="${C_MODEL}${model}${RESET}"
@@ -211,6 +309,11 @@ _render_status() {
     line1="$inner"
   fi
 
+  # Session cost — trails line 1 as compact session metadata (not a usage bar).
+  if [ "$CCBAR_SHOW_COST" = "1" ] && [ -n "$cost" ]; then
+    line1="${line1} ${C_LABEL}\$$(printf '%.2f' "$cost")${RESET}"
+  fi
+
   # ---- line 2: usage bars ----
   local line2="" seg bar
   if [ "$CCBAR_SHOW_CTX" = "1" ] && [ -n "$ctx_pct" ]; then
@@ -218,13 +321,22 @@ _render_status() {
     line2="${C_LABEL}ctx${RESET} ${bar} $(printf '%.0f' "$ctx_pct")%"
   fi
 
-  if [ "$CCBAR_SHOW_5H" = "1" ] && [ -n "$five_pct" ]; then
-    bar=$(render_bar "$five_pct")
-    seg="${C_LABEL}5h${RESET}  ${bar} $(printf '%.0f' "$five_pct")%"
-    if [ -n "$five_reset" ]; then
-      seg="${seg} ${C_RESETTXT}(resets ${RESET}$(render_reset "$five_reset")${C_RESETTXT})${RESET}"
+  if [ "$CCBAR_SHOW_5H" = "1" ]; then
+    if [ -n "$five_pct" ]; then
+      bar=$(render_bar "$five_pct")
+      seg="${C_LABEL}5h${RESET}  ${bar} $(printf '%.0f' "$five_pct")%"
+      if [ -n "$five_reset" ]; then
+        seg="${seg} ${C_RESETTXT}(resets ${RESET}$(render_reset "$five_reset")${C_RESETTXT})${RESET}"
+      fi
+      if [ "$CCBAR_SHOW_BURN" = "1" ] && [ -n "$five_reset" ]; then
+        seg="${seg}$(render_burn "$five_pct" "$five_reset" $((5 * 3600)))"
+      fi
+      if [ -n "$line2" ]; then line2="${line2}   ${seg}"; else line2="$seg"; fi
+    elif [ -n "$has_rl" ]; then
+      # rate_limits present but no five_hour block → window hasn't started.
+      seg="${C_LABEL}5h${RESET}  ${C_RESETTXT}idle${RESET}"
+      if [ -n "$line2" ]; then line2="${line2}   ${seg}"; else line2="$seg"; fi
     fi
-    if [ -n "$line2" ]; then line2="${line2}   ${seg}"; else line2="$seg"; fi
   fi
 
   if [ "$CCBAR_SHOW_7D" = "1" ] && [ -n "$week_pct" ]; then
@@ -233,11 +345,316 @@ _render_status() {
     if [ -n "$week_reset" ]; then
       seg="${seg} ${C_RESETTXT}(resets ${RESET}$(render_reset "$week_reset")${C_RESETTXT})${RESET}"
     fi
+    if [ "$CCBAR_SHOW_BURN" = "1" ] && [ -n "$week_reset" ]; then
+      seg="${seg}$(render_burn "$week_pct" "$week_reset" $((7 * 86400)))"
+    fi
     if [ -n "$line2" ]; then line2="${line2}   ${seg}"; else line2="$seg"; fi
   fi
 
   printf "%b" "$line1"
   [ -n "$line2" ] && printf "\n%b" "$line2"
+  printf "\n"
+}
+
+# ----------------------------------------------------------------------------
+# stats — an expanded, on-demand usage panel (claude-meter style).
+#
+# Data source: piped JSON if present, else the payload cached by the last
+# `ccbar render`. ccbar makes no network calls, so a standalone invocation
+# shows the most recent status Claude Code handed it — captured on each redraw.
+# ----------------------------------------------------------------------------
+
+# _humantokens N — 84000 -> "84k", 1230000 -> "1.2M", 512 -> "512".
+_humantokens() {
+  local n="$1"
+  case "$n" in ''|*[!0-9]*) printf "?"; return ;; esac
+  if [ "$n" -ge 1000000 ]; then
+    printf "%d.%dM" $(( n / 1000000 )) $(( (n % 1000000) / 100000 ))
+  elif [ "$n" -ge 1000 ]; then
+    printf "%dk" $(( n / 1000 ))
+  else
+    printf "%d" "$n"
+  fi
+}
+
+# _age_str SECS — "12s" under a minute, else fmt_dur ("2h 15m").
+_age_str() {
+  local diff="$1"
+  if [ "$diff" -lt 60 ] 2>/dev/null; then printf "%ds" "$diff"; else fmt_dur "$diff"; fi
+}
+
+# _pace_desc PCT RESETS_AT WINDOW_SECS — a human sentence about the current
+# burn: "hits limit in <t>" if projected to exhaust before reset, else
+# "on track". Empty when there isn't enough data to project.
+_pace_desc() {
+  local pct_raw="$1" resets_at="$2" win="$3"
+  local pct now start elapsed ttr eta rem
+  pct=$(printf '%.0f' "$pct_raw" 2>/dev/null || echo 0)
+  [ "$pct" -le 0 ] && return
+  now=$(date +%s)
+  start=$(( resets_at - win ))
+  elapsed=$(( now - start ))
+  [ "$elapsed" -le 0 ] && return
+  ttr=$(( resets_at - now ))
+  [ "$ttr" -le 0 ] && return
+  if [ "$pct" -ge 100 ]; then printf "limit reached"; return; fi
+  rem=$(( 100 - pct ))
+  eta=$(( rem * elapsed / pct ))
+  if [ "$eta" -lt "$ttr" ]; then
+    printf "hits limit in ~%s" "$(fmt_dur "$eta")"
+  else
+    printf "on track"
+  fi
+}
+
+# _stat_row LABEL VALUE — one aligned "  Label   value" line.
+_stat_row() {
+  printf "  %b%-9s%b %b\n" "$C_LABEL" "$1" "$RESET" "$2"
+}
+
+cmd_stats() {
+  if ! command -v jq >/dev/null 2>&1; then
+    printf "ccbar: jq not found — install jq to use 'ccbar stats' (see the README)\n"
+    return 0
+  fi
+
+  load_config
+  apply_theme "$CCBAR_THEME"
+
+  # Source: piped stdin wins (live); otherwise the cached last render.
+  local input="" age_note=""
+  if [ ! -t 0 ]; then
+    input=$(cat)
+  fi
+  if [ -z "$input" ]; then
+    if [ -f "$CACHE_FILE" ]; then
+      input=$(cat "$CACHE_FILE")
+      local mtime now
+      mtime=$(stat -f %m "$CACHE_FILE" 2>/dev/null || stat -c %Y "$CACHE_FILE" 2>/dev/null)
+      if [ -n "$mtime" ]; then
+        now=$(date +%s)
+        age_note="$(_age_str $(( now - mtime ))) ago"
+      fi
+    fi
+  fi
+
+  if [ -z "$input" ]; then
+    _err "no usage data yet — ccbar captures it each time Claude Code redraws the status line."
+    _err "open (or use) a Claude Code session, then run 'ccbar stats' again."
+    return 1
+  fi
+
+  _stats_panel "$input" "$age_note"
+}
+
+# _stats_panel INPUT AGE_NOTE — render the expanded usage panel from a JSON
+# payload. Colors must already be loaded (load_config + apply_theme).
+_stats_panel() {
+  local input="$1" age_note="$2"
+  local model effort cost
+  local ctx_pct ctx_size five_pct five_reset week_pct week_reset has_rl
+  model=$(printf '%s' "$input" | jq -r '.model.display_name // "?"')
+  effort=$(printf '%s' "$input" | jq -r '.effort.level // empty')
+  cost=$(printf '%s' "$input" | jq -r '.cost.total_cost_usd // empty')
+  ctx_pct=$(printf '%s' "$input" | jq -r '.context_window.used_percentage // empty')
+  ctx_size=$(printf '%s' "$input" | jq -r '.context_window.context_window_size // empty')
+  five_pct=$(printf '%s' "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
+  five_reset=$(printf '%s' "$input" | jq -r '.rate_limits.five_hour.resets_at // empty')
+  week_pct=$(printf '%s' "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
+  week_reset=$(printf '%s' "$input" | jq -r '.rate_limits.seven_day.resets_at // empty')
+  has_rl=$(printf '%s' "$input" | jq -r 'if .rate_limits then "1" else "" end')
+
+  local bold='\033[1m'
+  printf "\n%bccbar%b — usage\n\n" "$bold" "$RESET"
+
+  # Model (+ effort)
+  local mval="$model"
+  [ -n "$effort" ] && mval="$mval ${C_RESETTXT}(${effort})${RESET}"
+  _stat_row "Model" "$mval"
+
+  # Session (5-hour)
+  if [ -n "$five_pct" ]; then
+    local sbar sval pace
+    sbar=$(render_bar "$five_pct")
+    sval="${sbar} $(printf '%.0f' "$five_pct")%"
+    [ -n "$five_reset" ] && sval="${sval}   ${C_RESETTXT}resets in ${RESET}$(render_reset "$five_reset")"
+    _stat_row "Session" "$sval"
+    if [ -n "$five_reset" ]; then
+      pace=$(_pace_desc "$five_pct" "$five_reset" $((5 * 3600)))
+      [ -n "$pace" ] && _stat_row "" "${C_RESETTXT}${pace}${RESET}"
+    fi
+  elif [ -n "$has_rl" ]; then
+    _stat_row "Session" "${C_RESETTXT}idle — window not started${RESET}"
+  fi
+
+  # Weekly (7-day)
+  if [ -n "$week_pct" ]; then
+    local wbar wval
+    wbar=$(render_bar "$week_pct")
+    wval="${wbar} $(printf '%.0f' "$week_pct")%"
+    [ -n "$week_reset" ] && wval="${wval}   ${C_RESETTXT}resets in ${RESET}$(render_reset "$week_reset")"
+    _stat_row "Weekly" "$wval"
+  fi
+
+  # Context window
+  if [ -n "$ctx_pct" ]; then
+    local cbar cval used
+    cbar=$(render_bar "$ctx_pct")
+    cval="${cbar} $(printf '%.0f' "$ctx_pct")%"
+    if [ -n "$ctx_size" ]; then
+      used=$(( ctx_size * $(printf '%.0f' "$ctx_pct") / 100 ))
+      cval="${cval}   ${C_RESETTXT}$(_humantokens "$used") / $(_humantokens "$ctx_size")${RESET}"
+    fi
+    _stat_row "Context" "$cval"
+  fi
+
+  # Cost
+  [ -n "$cost" ] && _stat_row "Cost" "\$$(printf '%.2f' "$cost")"
+
+  # Freshness
+  [ -n "$age_note" ] && _stat_row "Updated" "${C_RESETTXT}${age_note}${RESET}"
+  printf "\n"
+}
+
+# ----------------------------------------------------------------------------
+# history — trends from the snapshots ccbar records on each render.
+# ----------------------------------------------------------------------------
+
+# _date_fmt EPOCH FMT — format a unix epoch (BSD `date -r` or GNU `date -d`).
+_date_fmt() {
+  date -r "$1" +"$2" 2>/dev/null || date -d "@$1" +"$2" 2>/dev/null
+}
+
+# _sparkline "v1 v2 …" — an 8-level sparkline for a series of 0-100 values.
+_sparkline() {
+  local ticks=(▁ ▂ ▃ ▄ ▅ ▆ ▇ █) out="" v idx
+  for v in $1; do
+    v=$(printf '%.0f' "$v" 2>/dev/null || echo 0)
+    [ "$v" -lt 0 ] && v=0
+    [ "$v" -gt 100 ] && v=100
+    idx=$(( v * 7 / 100 ))
+    out="${out}${ticks[$idx]}"
+  done
+  printf '%s' "$out"
+}
+
+cmd_history() {
+  load_config
+  apply_theme "$CCBAR_THEME"
+
+  # Data source: the real history log by default; a caller (e.g. demo) may pass
+  # an alternate TSV file.
+  local src="${1:-$HISTORY_FILE}"
+
+  if [ ! -s "$src" ]; then
+    _err "no history yet — ccbar records usage as Claude Code redraws the status line."
+    _err "use a Claude Code session for a while, then run 'ccbar history'."
+    return 1
+  fi
+
+  local now days cutoff
+  now=$(date +%s)
+  days=7
+  cutoff=$(( now - days * 86400 ))
+
+  # Local-day bucketing without strftime: shift epochs by the tz offset, then
+  # divide into 86400s buckets. (macOS awk lacks strftime, so we do it here.)
+  local tzoff sign hh mm off_sec
+  tzoff=$(date +%z 2>/dev/null)
+  case "$tzoff" in
+    [+-][0-9][0-9][0-9][0-9])
+      sign=${tzoff%${tzoff#?}}; hh=${tzoff:1:2}; mm=${tzoff:3:2}
+      off_sec=$(( 10#$hh * 3600 + 10#$mm * 60 ))
+      [ "$sign" = "-" ] && off_sec=$(( -off_sec ))
+      ;;
+    *) off_sec=0 ;;
+  esac
+
+  # Per-day rollup: "day_index peak5 peak7 cost samples", oldest first.
+  # Daily cost = sum over sessions of that session's max (cumulative) cost.
+  local rows
+  rows=$(awk -F'\t' -v off="$off_sec" -v cutoff="$cutoff" '
+    ($1 + 0) >= cutoff {
+      t = $1 + 0; sid = $2; cost = $4 + 0; h5 = $6 + 0; h7 = $8 + 0
+      di = int((t + off) / 86400)
+      if (h5 > p5[di]) p5[di] = h5
+      if (h7 > p7[di]) p7[di] = h7
+      cnt[di]++
+      k = di SUBSEP sid
+      if (cost >= sc[k]) { sc[k] = cost; sd[k] = di }
+    }
+    END {
+      for (k in sc) dc[sd[k]] += sc[k]
+      for (di in cnt) printf "%s %.0f %.0f %.2f %d\n", di, p5[di], p7[di], dc[di], cnt[di]
+    }
+  ' "$src" | sort -n)
+
+  [ -z "$rows" ] && { _err "no samples in the last $days days."; return 1; }
+
+  local bold='\033[1m'
+  printf "\n%bccbar%b — history (last %d days)\n\n" "$bold" "$RESET" "$days"
+
+  # Latest sample → "today" figures and the live bars.
+  local last h5_now h7_now last_sid
+  last=$(tail -n1 "$src")
+  last_sid=$(printf '%s' "$last" | cut -f2)
+  h5_now=$(printf '%s' "$last" | cut -f6)
+  h7_now=$(printf '%s' "$last" | cut -f8)
+
+  # Sparkline of daily 5h peaks (oldest → newest).
+  local spark_vals=""
+  local di p5 p7 dc n
+  while read -r di p5 p7 dc n; do
+    [ -z "$di" ] && continue
+    spark_vals="$spark_vals $p5"
+  done <<EOF
+$rows
+EOF
+  printf "  %b5h peak%b   %b%s%b" "$C_LABEL" "$RESET" "$BAR_MID" "$(_sparkline "$spark_vals")" "$RESET"
+  [ -n "$h5_now" ] && printf "   now %s%%" "$(printf '%.0f' "$h5_now")"
+  printf "\n"
+  if [ -n "$h7_now" ]; then
+    printf "  %b7d%b        %b %s%%\n" "$C_LABEL" "$RESET" "$(render_bar "$h7_now")" "$(printf '%.0f' "$h7_now")"
+  fi
+  printf "\n"
+
+  # Daily table, newest first.
+  printf "  %b%-9s %7s %7s %9s%b\n" "$C_LABEL" "Date" "5h peak" "7d peak" "~cost" "$RESET"
+  local -a LINES=()
+  while IFS= read -r ln; do [ -n "$ln" ] && LINES+=("$ln"); done <<EOF
+$rows
+EOF
+  local i label mid
+  for (( i = ${#LINES[@]} - 1; i >= 0; i-- )); do
+    set -- ${LINES[$i]}
+    di=$1; p5=$2; p7=$3; dc=$4
+    mid=$(( di * 86400 - off_sec + 43200 ))   # noon of that local day
+    label=$(_date_fmt "$mid" "%b %d")
+    printf "  %-9s %6s%% %6s%% %9s\n" "$label" "$p5" "$p7" "\$$dc"
+  done
+
+  # Measured burn over the last hour (same session only, to skip reset jumps).
+  local burn
+  burn=$(awk -F'\t' -v now="$now" -v sid="$last_sid" '
+    ($1 + 0) >= now - 3600 && $2 == sid {
+      t = $1 + 0; h = $6 + 0
+      if (!seen) { t0 = t; h0 = h; seen = 1 }
+      t1 = t; h1 = h
+    }
+    END {
+      if (seen && t1 > t0 && h1 >= h0) printf "%.1f", (h1 - h0) / ((t1 - t0) / 3600.0)
+    }
+  ' "$src")
+  if [ -n "$burn" ] && [ -n "$h5_now" ]; then
+    local rate_int eta_sec
+    rate_int=$(printf '%.0f' "$burn")
+    printf "\n  %bBurn (last hr)%b  ~%s%%/h" "$C_LABEL" "$RESET" "$rate_int"
+    if [ "$rate_int" -gt 0 ]; then
+      eta_sec=$(awk -v r="$burn" -v h="$h5_now" 'BEGIN { if (r > 0 && h < 100) printf "%d", (100 - h) / r * 3600 }')
+      [ -n "$eta_sec" ] && [ "$eta_sec" -gt 0 ] && printf " %b→ hits 5h limit in ~%s%b" "$C_RESETTXT" "$(fmt_dur "$eta_sec")" "$RESET"
+    fi
+    printf "\n"
+  fi
   printf "\n"
 }
 
@@ -253,10 +670,12 @@ _demo_json() {
   week=$(( now + 3 * 86400 + 4 * 3600 ))
   cat <<EOF
 {
+  "session_id": "demo",
   "model": { "display_name": "Opus 4.8" },
   "workspace": { "current_dir": "/Users/you/dev/my-project" },
   "effort": { "level": "high" },
-  "context_window": { "used_percentage": 42 },
+  "cost": { "total_cost_usd": 0.42 },
+  "context_window": { "used_percentage": 42, "context_window_size": 200000 },
   "rate_limits": {
     "five_hour": { "used_percentage": 63, "resets_at": $five },
     "seven_day": { "used_percentage": 88, "resets_at": $week }
@@ -265,11 +684,25 @@ _demo_json() {
 EOF
 }
 
-# cmd_demo — show how ccbar actually appears beneath the Claude Code prompt,
-# by framing a sample prompt and rendering the status line under it. Reflects
-# the user's own config, but shows a sample "Acme" label when none is set so
-# the org badge is always illustrated.
+# cmd_demo — preview ccbar with sample data. With no argument, shows the status
+# line beneath a sample prompt; `stats` and `history` preview those panels.
 cmd_demo() {
+  case "${1:-}" in
+    stats)         _demo_stats ;;
+    history|hist)  _demo_history ;;
+    "")            _demo_statusline ;;
+    *)
+      _err "unknown demo '$1' — try: ccbar demo [stats|history]"
+      return 2
+      ;;
+  esac
+}
+
+# _demo_statusline — show how ccbar appears beneath the Claude Code prompt, by
+# framing a sample prompt and rendering the status line under it. Reflects the
+# user's own config, but shows a sample "Acme" label when none is set so the
+# org badge is always illustrated.
+_demo_statusline() {
   local dim='\033[2m' accent='\033[1;36m' reset='\033[0m'
   local rule='────────────────────────────────────────────────────────────'
   printf "\n%bHow ccbar looks beneath your Claude Code prompt:%b\n\n" "$dim" "$reset"
@@ -286,6 +719,61 @@ cmd_demo() {
     _render_status "$(_demo_json)"
   fi
   printf "\n"
+}
+
+# _demo_stats — preview the `ccbar stats` panel with sample data.
+_demo_stats() {
+  if ! command -v jq >/dev/null 2>&1; then
+    printf "ccbar: jq not found — install jq to use 'ccbar demo stats' (see the README)\n"
+    return 0
+  fi
+  local dim='\033[2m' reset='\033[0m'
+  printf "\n%b'ccbar stats' with sample data:%b\n" "$dim" "$reset"
+  load_config
+  apply_theme "$CCBAR_THEME"
+  _stats_panel "$(_demo_json)" "just now"
+}
+
+# _demo_history — preview the `ccbar history` panel with sample data, by writing
+# a synthetic snapshot log to a temp file and rendering it.
+_demo_history() {
+  if ! command -v jq >/dev/null 2>&1; then
+    printf "ccbar: jq not found — install jq to use 'ccbar demo history' (see the README)\n"
+    return 0
+  fi
+  local dim='\033[2m' reset='\033[0m'
+  printf "\n%b'ccbar history' with sample data:%b\n" "$dim" "$reset"
+
+  local tmp now
+  tmp=$(mktemp 2>/dev/null) || tmp="${TMPDIR:-/tmp}/ccbar-demo-hist.$$"
+  now=$(date +%s)
+
+  # Deterministic 7-day sample: one session/day, daily 5h peaks and costs chosen
+  # to produce a varied sparkline and a realistic table. Today's samples fall in
+  # the last hour so the burn-rate line has something to measure.
+  awk -v now="$now" 'BEGIN {
+    OFS = "\t"
+    np = split("40 80 91 55 63 70 63", peak, " ")     # oldest → today
+    nc = split("2.54 2.70 3.32 3.52 3.46 3.44 2.64", dc, " ")
+    for (d = 6; d >= 0; d--) {
+      idx = 7 - d
+      day = now - d * 86400
+      sid = "demo-" idx
+      target = peak[idx] + 0
+      h7 = 80 + (6 - d)
+      for (i = 0; i < 5; i++) {
+        if (d == 0) t = now - (4 - i) * 900          # today: last hour, 15m apart
+        else t = day - (4 - i) * 1800
+        h5 = int(target * (i + 1) / 5)
+        cost = dc[idx] * (i + 1) / 5
+        printf "%d\t%s\tOpus 4.8\t%.4f\t%d\t%d\t%d\t%d\t%d\n", \
+          t, sid, cost, 42, h5, day + 3600, h7, day + 3 * 86400
+      }
+    }
+  }' >"$tmp"
+
+  cmd_history "$tmp"
+  rm -f "$tmp"
 }
 
 # ----------------------------------------------------------------------------
@@ -315,6 +803,7 @@ cmd_gallery() {
   # Force all segments on and a sample label so previews show everything.
   CCBAR_ORG="Acme"
   CCBAR_SHOW_EFFORT=1; CCBAR_SHOW_CTX=1; CCBAR_SHOW_5H=1; CCBAR_SHOW_7D=1
+  CCBAR_SHOW_COST=1; CCBAR_SHOW_BURN=0
 
   printf "%b\n\n" "${bold}ccbar gallery${RESET} — preset looks you can apply"
 
@@ -362,7 +851,8 @@ _apply_preset() {
     [ "$i" = "$want" ] || continue
 
     # Drop the preview-only overrides, then load the user's real settings.
-    unset CCBAR_ORG CCBAR_SHOW_EFFORT CCBAR_SHOW_CTX CCBAR_SHOW_5H CCBAR_SHOW_7D
+    unset CCBAR_ORG CCBAR_SHOW_EFFORT CCBAR_SHOW_CTX CCBAR_SHOW_5H CCBAR_SHOW_7D \
+          CCBAR_SHOW_COST CCBAR_SHOW_BURN
     load_config
     CCBAR_THEME="$theme"; CCBAR_BAR_WIDTH="$width"
     CCBAR_BAR_FILLED="$filled"; CCBAR_BAR_EMPTY="$empty"
@@ -380,6 +870,8 @@ CCBAR_SHOW_EFFORT="$CCBAR_SHOW_EFFORT"
 CCBAR_SHOW_CTX="$CCBAR_SHOW_CTX"
 CCBAR_SHOW_5H="$CCBAR_SHOW_5H"
 CCBAR_SHOW_7D="$CCBAR_SHOW_7D"
+CCBAR_SHOW_COST="$CCBAR_SHOW_COST"
+CCBAR_SHOW_BURN="$CCBAR_SHOW_BURN"
 CFG
     _say "Applied \"$name\" → $CONFIG_FILE"
     _say "Start a new Claude Code session (or restart it) to see it."
@@ -462,7 +954,7 @@ cmd_config() {
   _say "\033[1mccbar setup\033[0m — press Enter to keep the [default].\n"
 
   local org theme width filled empty style
-  local show_effort show_ctx show_5h show_7d
+  local show_effort show_ctx show_5h show_7d show_cost show_burn
 
   org=$(ask "Org / label to show at the front (blank to hide)" "$CCBAR_ORG")
 
@@ -472,6 +964,8 @@ cmd_config() {
   show_ctx=$(ask_yn "  Context window bar" "$CCBAR_SHOW_CTX")
   show_5h=$(ask_yn "  5-hour usage bar" "$CCBAR_SHOW_5H")
   show_7d=$(ask_yn "  7-day usage bar" "$CCBAR_SHOW_7D")
+  show_cost=$(ask_yn "  Session cost (\$)" "$CCBAR_SHOW_COST")
+  show_burn=$(ask_yn "  Burn-rate warning (⚠ when on pace to hit a limit early)" "$CCBAR_SHOW_BURN")
 
   _say ""
   _say "Color theme:"
@@ -520,6 +1014,8 @@ CCBAR_SHOW_EFFORT="$show_effort"
 CCBAR_SHOW_CTX="$show_ctx"
 CCBAR_SHOW_5H="$show_5h"
 CCBAR_SHOW_7D="$show_7d"
+CCBAR_SHOW_COST="$show_cost"
+CCBAR_SHOW_BURN="$show_burn"
 EOF
 
   _say ""
@@ -579,9 +1075,12 @@ ccbar — a configurable status line for Claude Code
 Usage:
   ccbar render       Read Claude Code's status JSON on stdin and print the bar.
                      (This is what Claude Code itself calls.)
+  ccbar stats        Show an expanded usage panel from the latest render.
+  ccbar history      Show usage trends from recorded snapshots.
   ccbar config       Run the interactive setup wizard.
   ccbar gallery      Browse preset looks and optionally apply one.
   ccbar demo         Preview the status line with sample data.
+                     (Also: `ccbar demo stats` and `ccbar demo history`.)
   ccbar uninstall    Remove ccbar's wiring from Claude Code settings.
   ccbar version      Print the version.
   ccbar help         Show this help.
@@ -597,9 +1096,11 @@ EOF
 main() {
   case "${1:-}" in
     render)                shift; cmd_render "$@" ;;
+    stats|status)          cmd_stats ;;
+    history|hist)          cmd_history ;;
     config|configure|init) cmd_config ;;
     gallery|presets)       cmd_gallery ;;
-    demo)                  cmd_demo ;;
+    demo)                  shift; cmd_demo "$@" ;;
     uninstall)             cmd_uninstall ;;
     version|--version|-v)  cmd_version ;;
     help|--help|-h)        cmd_help ;;

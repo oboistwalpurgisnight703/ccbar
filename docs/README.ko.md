@@ -24,10 +24,17 @@
   <img src="../assets/ccbar-preview.png" alt="ccbar status line preview" width="760">
 </p>
 
-- **1번째 줄** — 선택적인 조직/레이블 배지, 모델 이름, 현재 노력 수준, 그리고 워크스페이스 디렉터리.
+- **1번째 줄** — 선택적인 조직/레이블 배지, 모델 이름, 현재 노력 수준, 워크스페이스 디렉터리, 그리고 (선택적으로) 실시간 **세션 비용**.
 - **2번째 줄** — **컨텍스트 창**, **5시간** 사용 한도, **7일** 사용 한도에 대한 색상 사용량 막대이며, 각각 재설정까지 남은 시간을 함께 표시합니다.
 
 막대는 채워질수록 🟢 초록 → 🟡 노랑 → 🔴 빨강으로 바뀌므로, 남은 여유가 얼마나 되는지 한눈에 알 수 있습니다.
+
+사용 한도 창을 관리하는 데 도움이 되는 두 가지 추가 기능이 있습니다:
+
+- **유휴 5시간 창** — 첫 메시지를 보내기 전에는 5시간 창이 아직 시작되지 않았으므로, ccbar는 시계가 돌지 않고 있음을 알리기 위해 `5h idle`을 표시합니다. (Claude의 5시간 한도는 첫 메시지를 기준으로 삼는 롤링 창입니다 — 유휴 상태에서 아무 프롬프트나 짧게 하나 보내면 창이 일찍 시작되어 결국 기다리는 시간이 줄어듭니다.)
+- **소진 속도 경고** *(선택 활성화)* — 현재 속도로는 한도가 재설정되기 *전에* 소진될 것으로 예상될 때, ccbar는 해당 막대에 `⚠ <time>` 추정치를 덧붙입니다. 기본적으로 꺼져 있으며, `ccbar config`에서 활성화하세요.
+
+상태 표시줄 외에도, ccbar는 두 가지 터미널 명령을 제공합니다: 확장된 사용량 패널을 보여주는 **[`ccbar stats`](#usage-insights)**, 그리고 7일간의 사용량 추이를 보여주는 **[`ccbar history`](#usage-insights)**.
 
 ---
 
@@ -83,6 +90,9 @@ ccbar config
 | `CCBAR_SHOW_CTX`    | `1`     | 컨텍스트 창 막대 표시 여부(`1`/`0`).                             |
 | `CCBAR_SHOW_5H`     | `1`     | 5시간 사용량 막대 표시 여부(`1`/`0`).                             |
 | `CCBAR_SHOW_7D`     | `1`     | 7일 사용량 막대 표시 여부(`1`/`0`).                              |
+| `CCBAR_SHOW_COST`   | `0`     | 1번째 줄에 실시간 세션 비용 표시 여부(`1`/`0`).                 |
+| `CCBAR_SHOW_BURN`   | `0`     | 현재 속도로 한도가 일찍 소진될 때 경고(`⚠ <time>`) 표시 여부(`1`/`0`). |
+| `CCBAR_HISTORY`     | `1`     | `ccbar history`용 사용량 스냅샷 기록 여부(`1`/`0`).              |
 
 모든 값에는 합리적인 기본값이 있으므로, 설정이 없거나 일부만 있어도 문제없이 렌더링됩니다.
 
@@ -96,6 +106,18 @@ ccbar config
 
 ## 명령어
 
+확장된 사용량 패널을 표시합니다([사용량 인사이트](#usage-insights) 참고).
+
+```sh
+ccbar stats
+```
+
+7일간의 사용량 추이를 표시합니다([사용량 인사이트](#usage-insights) 참고).
+
+```sh
+ccbar history
+```
+
 대화형 설정 마법사를 실행합니다.
 
 ```sh
@@ -108,10 +130,12 @@ ccbar config
 ccbar gallery
 ```
 
-샘플 데이터로 상태 표시줄을 미리 봅니다.
+샘플 데이터로 미리 봅니다 — 상태 표시줄, 또는 (`stats`/`history`와 함께) 두 사용량 패널 중 하나.
 
 ```sh
 ccbar demo
+ccbar demo stats
+ccbar demo history
 ```
 
 stdin으로 Claude Code의 상태 JSON을 읽어 막대를 출력합니다 (Claude Code 자체가 호출하는 명령입니다).
@@ -143,6 +167,49 @@ ccbar help
 > echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc   # or ~/.bashrc
 > ```
 > 상태 표시줄 자체는 절대 경로를 사용하므로 `PATH` 설정과 관계없이 동작합니다.
+
+<a id="usage-insights"></a>
+## 사용량 인사이트
+
+ccbar는 **네트워크 호출을 전혀 하지 않고** **자격 증명도 없습니다** — 오직 Claude Code가 `ccbar render`에 파이프로 넘겨주는 JSON만 봅니다. 그 데이터를 상태 표시줄 밖에서도 유용하게 쓸 수 있도록, `render`는 가장 최근 페이로드를 캐시하고(작은 롤링 히스토리도 함께 기록합니다), 두 명령이 이를 다시 읽어 옵니다. `ccbar demo stats`와 `ccbar demo history`로 샘플 데이터를 사용해 시험해 보세요.
+
+### `ccbar stats`
+
+필요할 때 볼 수 있는 확장된 사용량 패널 — 모델, 세션(5시간), 주간(7일), 컨텍스트, 비용, 재설정 카운트다운, 그리고 현재 속도:
+
+```
+ccbar — usage
+
+  Model     Opus 4.8 (high)
+  Session   ██████░░░░ 63%   resets in 2h 15m
+            hits limit in ~1h 36m
+  Weekly    ████████░░ 88%   resets in 3d 4h
+  Context   ████░░░░░░ 42%   84k / 200k
+  Cost      $0.42
+  Updated   12s ago
+```
+
+`stats`는 Claude Code가 `ccbar render`에 넘겨준 가장 최근 페이로드를 읽습니다(상태 표시줄이 다시 그려질 때마다 캡처되며 얼마나 오래되었는지가 함께 기록됩니다). 최신 JSON을 파이프로 넣어(`… | ccbar stats`) 이를 덮어쓸 수 있습니다.
+
+### `ccbar history`
+
+지난 7일간의 사용량 추이 — 일별 5시간 최고치의 스파크라인, 현재 주간 사용량, 일별 표(5시간/7일 최고 %, 추정 비용), 그리고 측정된 소진 속도:
+
+```
+ccbar — history (last 7 days)
+
+  5h peak   ▃▆▇▄▅▅▅   now 63%
+  7d        ████████░░ 86%
+
+  Date      5h peak 7d peak     ~cost
+  Jul 24        63%     86%     $2.64
+  Jul 23        70%     85%     $3.44
+  Jul 22        63%     84%     $3.46
+
+  Burn (last hr)  ~22%/h → hits 5h limit in ~1h 40m
+```
+
+`render`는 제한된 빈도로(분당 최대 한 번) `${XDG_STATE_HOME:-~/.local/state}/ccbar/history.tsv`에 스냅샷을 기록하고, `history`는 이를 요약합니다. 이는 Claude Code가 열려 있던 시간만 반영하며, 일별 비용은 추정치입니다(세션별로 합산). 기록을 완전히 비활성화하려면 `CCBAR_HISTORY=0`을 설정하고, 초기화하려면 파일을 삭제하세요.
 
 ## 작동 방식
 
