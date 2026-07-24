@@ -12,7 +12,7 @@
       "name": "ccbar",
       "source": "./",
       "description": "A configurable status line for Claude Code — model, effort, workspace, and live context/rate-limit usage bars.",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "author": { "name": "Lakpriya Senevirathna" },
       "homepage": "https://github.com/lakpriya1s/ccbar#readme",
       "license": "MIT",
