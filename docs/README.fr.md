@@ -24,10 +24,17 @@ Visualisez votre modèle, votre niveau d'effort, votre espace de travail et votr
   <img src="../assets/ccbar-preview.png" alt="ccbar status line preview" width="760">
 </p>
 
-- **Ligne 1** — un badge org/label optionnel, le nom du modèle, le niveau d'effort actuel et le répertoire de l'espace de travail.
+- **Ligne 1** — un badge org/label optionnel, le nom du modèle, le niveau d'effort actuel, le répertoire de l'espace de travail et (optionnellement) le **coût de la session** en cours.
 - **Ligne 2** — des barres d'utilisation colorées pour votre **fenêtre de contexte**, votre limite de débit sur **5 heures** et votre limite de débit sur **7 jours**, chacune accompagnée d'un compte à rebours jusqu'à sa réinitialisation.
 
 Les barres passent du 🟢 vert au 🟡 jaune puis au 🔴 rouge à mesure qu'elles se remplissent, ce qui vous permet de voir d'un coup d'œil la marge qu'il vous reste.
+
+Deux extras vous aident à gérer vos fenêtres de limite de débit :
+
+- **Fenêtre de 5 heures inactive** — avant l'envoi de votre premier message, la fenêtre de 5 heures n'a pas encore démarré, ccbar affiche donc `5h idle` pour signaler que le compteur n'est pas lancé. (La limite de 5 heures de Claude est une fenêtre glissante ancrée à votre premier message — envoyer un message jetable rapide pendant que vous êtes inactif démarre la fenêtre plus tôt et raccourcit l'attente éventuelle.)
+- **Avertissement de rythme de consommation** *(optionnel)* — lorsque votre rythme actuel projette d'épuiser une limite *avant* sa réinitialisation, ccbar ajoute une estimation `⚠ <time>` à cette barre. Désactivé par défaut ; activez-le dans `ccbar config`.
+
+Au-delà de la status line, ccbar vous propose deux commandes de terminal : **[`ccbar stats`](#usage-insights)** pour un panneau d'utilisation détaillé, et **[`ccbar history`](#usage-insights)** pour les tendances d'utilisation sur 7 jours.
 
 ---
 
@@ -83,6 +90,9 @@ Il écrit un fichier simple et modifiable à la main dans `~/.config/ccbar/confi
 | `CCBAR_SHOW_CTX`    | `1`     | Afficher la barre de la fenêtre de contexte (`1`/`0`).                             |
 | `CCBAR_SHOW_5H`     | `1`     | Afficher la barre d'utilisation sur 5 heures (`1`/`0`).                              |
 | `CCBAR_SHOW_7D`     | `1`     | Afficher la barre d'utilisation sur 7 jours (`1`/`0`).                                |
+| `CCBAR_SHOW_COST`   | `0`     | Afficher le coût de la session en cours sur la ligne 1 (`1`/`0`).                 |
+| `CCBAR_SHOW_BURN`   | `0`     | Avertir (`⚠ <time>`) lorsque votre rythme va épuiser une limite en avance (`1`/`0`). |
+| `CCBAR_HISTORY`     | `1`     | Enregistrer des instantanés d'utilisation pour `ccbar history` (`1`/`0`).              |
 
 Chaque valeur possède une valeur par défaut raisonnable, si bien qu'une configuration manquante ou partielle s'affiche tout de même correctement.
 
@@ -96,6 +106,18 @@ Chaque valeur possède une valeur par défaut raisonnable, si bien qu'une config
 
 ## Commandes
 
+Affiche un panneau d'utilisation détaillé (voir [Aperçus d'utilisation](#usage-insights)).
+
+```sh
+ccbar stats
+```
+
+Affiche les tendances d'utilisation sur 7 jours (voir [Aperçus d'utilisation](#usage-insights)).
+
+```sh
+ccbar history
+```
+
 Lance l'assistant de configuration interactif.
 
 ```sh
@@ -108,10 +130,12 @@ Parcourez les presets et appliquez-en un si vous le souhaitez.
 ccbar gallery
 ```
 
-Prévisualise la status line avec des données d'exemple.
+Prévisualise avec des données d'exemple — la status line, ou (avec `stats`/`history`) l'un ou l'autre panneau d'utilisation.
 
 ```sh
 ccbar demo
+ccbar demo stats
+ccbar demo history
 ```
 
 Lit le JSON de statut de Claude Code sur stdin et affiche la barre (c'est ce que Claude Code lui-même appelle).
@@ -143,6 +167,49 @@ ccbar help
 > echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc   # ou ~/.bashrc
 > ```
 > La status line elle-même utilise un chemin absolu, elle fonctionne donc quel que soit votre `PATH`.
+
+<a id="usage-insights"></a>
+## Aperçus d'utilisation
+
+ccbar n'effectue **aucun appel réseau** et n'a **aucun identifiant** — il ne voit jamais que le JSON que Claude Code transmet à `ccbar render`. Pour rendre ces données utiles en dehors de la status line, `render` met en cache la dernière charge utile (et enregistre un petit historique glissant), que deux commandes relisent. Essayez-les avec des données d'exemple via `ccbar demo stats` et `ccbar demo history`.
+
+### `ccbar stats`
+
+Un panneau d'utilisation détaillé, à la demande — modèle, session (5h), hebdomadaire (7j), contexte, coût, comptes à rebours de réinitialisation et votre rythme actuel :
+
+```
+ccbar — usage
+
+  Model     Opus 4.8 (high)
+  Session   ██████░░░░ 63%   resets in 2h 15m
+            hits limit in ~1h 36m
+  Weekly    ████████░░ 88%   resets in 3d 4h
+  Context   ████░░░░░░ 42%   84k / 200k
+  Cost      $0.42
+  Updated   12s ago
+```
+
+Il lit la charge utile la plus récente que Claude Code a transmise à `ccbar render` (capturée à chaque redessin et horodatée avec le temps écoulé depuis). Redirigez du JSON frais en entrée — `… | ccbar stats` — pour la remplacer.
+
+### `ccbar history`
+
+Les tendances d'utilisation sur les 7 derniers jours — un sparkline des pics quotidiens sur 5 heures, l'utilisation hebdomadaire actuelle, un tableau par jour (pic % 5h/7d, coût estimé) et votre rythme de consommation mesuré :
+
+```
+ccbar — history (last 7 days)
+
+  5h peak   ▃▆▇▄▅▅▅   now 63%
+  7d        ████████░░ 86%
+
+  Date      5h peak 7d peak     ~cost
+  Jul 24        63%     86%     $2.64
+  Jul 23        70%     85%     $3.44
+  Jul 22        63%     84%     $3.46
+
+  Burn (last hr)  ~22%/h → hits 5h limit in ~1h 40m
+```
+
+`render` enregistre un instantané limité (au plus un par minute) dans `${XDG_STATE_HOME:-~/.local/state}/ccbar/history.tsv`, et `history` en fait la synthèse. Cela ne reflète que le temps pendant lequel Claude Code était ouvert, et le coût quotidien est une estimation (sommée par session). Définissez `CCBAR_HISTORY=0` pour désactiver complètement l'enregistrement ; supprimez le fichier pour réinitialiser.
 
 ## Fonctionnement
 

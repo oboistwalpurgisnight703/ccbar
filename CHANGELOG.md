@@ -3,6 +3,34 @@
 All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-07-24
+
+### Added
+- **`ccbar demo stats`** and **`ccbar demo history`** — preview the two usage
+  panels with sample data (no real usage or history required). Plain `ccbar demo`
+  still previews the status line.
+- **`ccbar history`** — usage trends over the last 7 days: a sparkline of daily
+  5-hour peaks, current weekly usage, a per-day table (peak 5h/7d %, estimated
+  cost), and a measured burn rate. `render` records a throttled snapshot (≤1/min)
+  to `${XDG_STATE_HOME:-~/.local/state}/ccbar/history.tsv`, bounded in size.
+  Disable with `CCBAR_HISTORY=0`.
+- **`ccbar stats`** — an expanded, on-demand usage panel (session, weekly,
+  context, cost, reset countdowns, and pace) for the terminal. Since ccbar makes
+  no network calls, `render` now caches each payload to
+  `${XDG_CACHE_HOME:-~/.cache}/ccbar/last.json`, and `stats` reads that cache
+  (stamped with its age) or accepts piped JSON.
+- **Session cost** on line 1 (`CCBAR_SHOW_COST`, default off) — reads
+  `cost.total_cost_usd` from Claude Code's status JSON and shows it as `$0.42`.
+- **Idle 5-hour window** state — when the rolling 5-hour window hasn't started
+  yet (rate-limit data present but no `five_hour` block), the 5h segment shows
+  `5h idle` instead of being hidden, so you can tell the clock isn't running.
+- **Burn-rate warning** (`CCBAR_SHOW_BURN`, default off) — when your current
+  pace projects to exhaust the 5-hour or 7-day limit *before* it resets, ccbar
+  appends a `⚠ <time>` estimate to that bar. Inferred from `used_percentage`
+  and `resets_at`; no network calls.
+- Two new wizard prompts (`ccbar config`) for the cost and burn-rate options;
+  the gallery preserves both when applying a preset.
+
 ## [0.2.1] - 2026-07-22
 
 ### Added

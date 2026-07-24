@@ -25,7 +25,7 @@ const SETTINGS_DIR = path.join(HOME, '.claude');
 const SETTINGS = path.join(SETTINGS_DIR, 'settings.json');
 const BUNDLED = path.join(__dirname, 'bin', 'ccbar');
 
-const FORWARD = ['render', 'config', 'gallery', 'presets', 'demo', 'uninstall', 'version', 'help'];
+const FORWARD = ['render', 'stats', 'status', 'history', 'hist', 'config', 'gallery', 'presets', 'demo', 'uninstall', 'version', 'help'];
 
 // ---- tiny ANSI helpers (disabled when not a TTY) ----------------------------
 const tty = process.stdout.isTTY;
